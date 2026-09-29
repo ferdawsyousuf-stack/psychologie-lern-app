@@ -1,6 +1,10 @@
 # Designsystem Gehirnatlas
 
-Ruhig, flach, eine Akzentfarbe. Die Farbe gehört den Inhalten: Hirnregionen, Module und Botenstoffe haben eigene Farben, die Oberfläche bleibt neutral.
+Hell, klar und lebendig. Warmweißer Grund, Gold für Fortschritt und Hauptaktion, dazu Akzente mit Bedeutung: Koralle (Impuls), Violett (Gehirn, Gedächtnis), Himmelblau (Themen), Mint (Erfolg, Lernen). Jeder Bereich hat seine Farbe (`body[data-group]` → `--sec`). Grafiken bleiben als dunkle Leuchtkästen (`.stage`, `.ncard`, `.sycard`, `.s2d`, `.eeg`, `.scope`), dort gelten die Nachtfarben.
+
+Lebendigkeit: bewegte Neuronennetze im Kopf von Heute und hinter jedem Seitenkopf (`FXL`), Signale bei jedem Lernschritt, Funken bei richtigen Antworten und guten Karten, Meldung beim Erreichen des Tagesziels, gestaffelte Einblendungen beim Seitenwechsel. Alles respektiert „Bewegung reduzieren“.
+
+Die Tabelle unten beschreibt die frühere dunkle Palette; sie gilt heute nur noch in den Leuchtkästen.
 
 ## Farben (CSS-Variablen in `:root`)
 
