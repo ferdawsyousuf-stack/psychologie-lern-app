@@ -43,3 +43,7 @@ Farbverläufe auf Flächen, Leuchteffekte (`box-shadow` mit Farbe), Glas-Unschä
 ## Einstieg: Portal-Reise
 
 Beim ersten Öffnen pro Browser-Sitzung läuft ein Vollbild-Einstieg (`#intro`, Klassen `ix-*`): Vorladen mit Zähler, dann eine Reise durch Gehirn → Nervenzelle → Synapse → Lernen. Das Portal-Fenster ist eine Canvas-Maske, die Szenen werden live gezeichnet. Titel und Fakten liest der Einstieg aus den Inhalten der App (Strukturen, Aktionspotenzial-Zahlen, Übertragungsschritte, Lernmethoden). Das letzte Portal, „App öffnen“, die Weltenliste und Esc führen in die Lern-App; ein Klick auf das Logo spielt den Einstieg erneut ab. Titelschrift: Antonio.
+
+## Prüfen: Themen-Tests und Probeklausur
+
+In „Probeprüfung“ wählt man oben ein Modul. Jedes Thema hat einen Themen-Test mit bis zu 10 Fragen, ab 80 % gilt es als bestanden (`P.tt['m:t']`). Die große Probeklausur zieht 40 Fragen gleichmäßig aus allen Themen des Moduls (`P.mx[m]`, Ziel 75 %). Der Status erscheint als Abzeichen (`.ttb`: offen, Prozent, bestanden) in der Themenliste, in „Fächer“ und als Balken in den Modulzeilen von Heute. Nur das nächste offene Thema trägt einen goldenen Knopf. Ein erstmals bestandenes Thema löst Funken und eine Meldung aus. In „Fächer“ startet „Karten“ eine Lernsitzung nur mit den Karteikarten eines Themas.
