@@ -35,3 +35,7 @@ Grafiken (Gehirn, Zelle, Synapse, Sehbahn) liegen in dunklen Leuchtkästen mit `
 ## Nicht verwenden
 
 Farbverläufe auf Flächen, Leuchteffekte (`box-shadow` mit Farbe), Glas-Unschärfe auf Karten, Konfetti, Hüpf-Effekte beim Überfahren, Emojis in der Oberfläche.
+
+## Einstieg: Portal-Reise
+
+Beim ersten Öffnen pro Browser-Sitzung läuft ein Vollbild-Einstieg (`#intro`, Klassen `ix-*`): Vorladen mit Zähler, dann eine Reise durch Gehirn → Nervenzelle → Synapse → Lernen. Das Portal-Fenster ist eine Canvas-Maske, die Szenen werden live gezeichnet. Titel und Fakten liest der Einstieg aus den Inhalten der App (Strukturen, Aktionspotenzial-Zahlen, Übertragungsschritte, Lernmethoden). Das letzte Portal, „App öffnen“, die Weltenliste und Esc führen in die Lern-App; ein Klick auf das Logo spielt den Einstieg erneut ab. Titelschrift: Antonio.
