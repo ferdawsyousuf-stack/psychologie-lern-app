@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Modul 1 · Studienplaner WS 26/27</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#eef2f6;--card:#fff;--ink:#132230;--mute:#5a6977;--line:#d7dfe7;--soft:#f5f8fb;
+ --pvl:#c0322b;--pvlbg:#fbe9e7;--pf:#1f4e79;--pfbg:#e3edf7;--ok:#1f7a55;--okbg:#e2f3eb;--warn:#8a5a00;--warnbg:#fdf1dc;
+ --psy:#2f6db5;--fome:#7a4fb0;--wa:#16806f;--kv:#b06d12;--allg:#5a6977;--stud:#5a6977;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:#0f161d;--card:#17212b;--ink:#e6edf3;--mute:#97a6b4;--line:#293744;--soft:#1c2833;
+ --pvl:#ff7b72;--pvlbg:#3b1f1d;--pf:#8ab8e6;--pfbg:#1b2c3d;--ok:#5fd09f;--okbg:#16332a;--warn:#f0b85a;--warnbg:#3a2c14;
+ --psy:#7fb0ee;--fome:#b99ae6;--wa:#5fcbb8;--kv:#e5a654;--allg:#97a6b4;--stud:#97a6b4}}
+:root[data-theme="dark"]{
+ --bg:#0f161d;--card:#17212b;--ink:#e6edf3;--mute:#97a6b4;--line:#293744;--soft:#1c2833;
+ --pvl:#ff7b72;--pvlbg:#3b1f1d;--pf:#8ab8e6;--pfbg:#1b2c3d;--ok:#5fd09f;--okbg:#16332a;--warn:#f0b85a;--warnbg:#3a2c14;
+ --psy:#7fb0ee;--fome:#b99ae6;--wa:#5fcbb8;--kv:#e5a654;--allg:#97a6b4;--stud:#97a6b4}
+*{box-sizing:border-box}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 130px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--pf)}
+.wrap{max-width:780px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);border-bottom:1px solid var(--line)}
+.hd{padding:14px 0 10px}
+.hd h1{margin:0;font-size:20px;line-height:1.25;font-weight:700}
+.hd p{margin:2px 0 10px;color:var(--mute);font-size:14px}
+.pbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.pstat{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-top:5px}
+nav{display:flex;gap:4px;overflow-x:auto;padding:8px 0 10px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:15px;font-weight:500;padding:8px 14px;border-radius:8px;cursor:pointer}
+nav button[aria-current="page"]{background:var(--pf);border-color:var(--pf);color:var(--card)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--pf);outline-offset:2px}
+main{padding:18px 0 40px}
+h2.v{font-size:22px;margin:0 0 4px;font-weight:700}
+p.lead{margin:0 0 18px;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:0 0 16px;overflow:hidden}
+.card>h3{margin:0;padding:12px 16px;font-size:16px;font-weight:600;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card>h3 small{font-size:13px;color:var(--mute);font-weight:500;white-space:nowrap}
+.pad{padding:14px 16px}
+.counters{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.counters div{padding:12px 14px;border-left:1px solid var(--line)}
+.counters div:first-child{border-left:0}
+.counters b{display:block;font-size:22px;line-height:1.1}
+.counters span{font-size:13px;color:var(--mute)}
+.today{font-size:15px}
+.today b{font-weight:600}
+/* task rows */
+.task{display:grid;grid-template-columns:26px 1fr auto;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;align-items:start}
+.task:last-child{border-bottom:0}
+.task.k-pvl:not(.is-done){box-shadow:inset 4px 0 0 var(--pvl)}
+.task.k-pflicht:not(.is-done){box-shadow:inset 4px 0 0 var(--pf)}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:24px;height:24px;margin:1px 0 0;border:2px solid var(--mute);border-radius:6px;background:transparent;cursor:pointer;display:grid;place-content:center}
+input[type=checkbox]:checked{background:var(--ok);border-color:var(--ok)}
+input[type=checkbox]:checked::after{content:"";width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.ttl{font-weight:600}
+.is-done .ttl{text-decoration:line-through;color:var(--mute);font-weight:500}
+.tmeta{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);margin-top:2px;flex-wrap:wrap}
+.tdesc{display:block;font-size:14px;color:var(--mute);margin-top:4px}
+.is-done .tdesc{display:none}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 9px;display:inline-block}
+.c-psy{background:var(--psy)}.c-fome{background:var(--fome)}.c-wa{background:var(--wa)}.c-kv{background:var(--kv)}.c-allg,.c-stud{background:var(--allg)}
+.tag{display:inline-block;font-size:12px;font-weight:600;line-height:1.5;padding:0 7px;border-radius:9px;margin-left:6px;vertical-align:1px;white-space:nowrap}
+.tag.pvl{background:var(--pvlbg);color:var(--pvl)}
+.tag.pflicht{background:var(--pfbg);color:var(--pf)}
+.tag.wichtig{background:var(--warnbg);color:var(--warn)}
+.tag.frei{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
+.due{font-size:13px;font-weight:600;white-space:nowrap;padding:2px 8px;border-radius:6px;background:var(--soft);color:var(--mute)}
+.due.over{background:var(--pvlbg);color:var(--pvl)}
+.due.active{background:var(--okbg);color:var(--ok)}
+.due.urgent{background:var(--warnbg);color:var(--warn)}
+.due.done{background:transparent;color:var(--ok)}
+/* progress rows */
+.prow{margin:0 0 14px}.prow:last-child{margin:0}
+.prow div:first-child{display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px}
+.prow .pbar i.pv{background:var(--pvl)}
+/* week */
+.wk{display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid var(--line)}
+.wk:last-child{border-bottom:0}
+.wk>span{padding:10px 16px;font-size:14px}
+.wk>span:first-child{display:flex;align-items:flex-start;gap:8px;font-weight:600;color:var(--mute)}
+.wk>span:first-child .dot{margin-top:6px}
+.pv{display:inline-block;font-size:11px;font-weight:700;padding:0 6px;border-radius:8px;background:var(--pvlbg);color:var(--pvl);margin-right:6px;vertical-align:1px}
+.wcard.now{border:2px solid var(--pf)}
+.wcard.pause>h3{background:var(--soft)}
+.nowtag{font-size:12px;font-weight:700;color:var(--card);background:var(--pf);padding:1px 8px;border-radius:9px}
+.wcard.past{opacity:.6}
+/* courses */
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+.pills button{border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;padding:6px 12px;border-radius:16px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.chead{padding:16px;border-bottom:1px solid var(--line)}
+.chead h3{margin:0 0 4px;font-size:19px;font-weight:700;display:flex;gap:10px;align-items:center}
+.chead h3 .dot{width:12px;height:12px;flex-basis:12px}
+.chead p{margin:0 0 10px;color:var(--mute)}
+.links{display:flex;flex-wrap:wrap;gap:8px;font-size:14px}
+.links a{border:1px solid var(--line);border-radius:6px;padding:4px 10px;text-decoration:none;background:var(--soft)}
+.links span{border:1px dashed var(--line);border-radius:6px;padding:4px 10px;color:var(--mute)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));border-bottom:1px solid var(--line)}
+.cols>div{padding:14px 16px;border-left:1px solid var(--line)}
+.cols>div:first-child{border-left:0}
+.cols h4{margin:0 0 8px;font-size:14px;font-weight:700}
+.cols h4.r{color:var(--pvl)}.cols h4.g{color:var(--mute)}.cols h4.b{color:var(--pf)}
+.cols ul{margin:0;padding-left:18px;font-size:14px}
+.cols li{margin-bottom:5px}
+.sub{margin:0;padding:10px 16px;font-size:14px;font-weight:700;background:var(--soft);border-bottom:1px solid var(--line)}
+.theme{display:grid;grid-template-columns:26px 28px 1fr auto;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;font-size:15px}
+.theme:last-child{border-bottom:0}
+.theme .n{font-weight:700;color:var(--mute);text-align:right}
+.theme .w{font-size:13px;color:var(--mute);white-space:nowrap}
+.theme.now{background:var(--pfbg)}
+.theme.is-done .tt{text-decoration:line-through;color:var(--mute)}
+/* filters */
+.flt{display:flex;gap:6px;margin:0 0 16px;flex-wrap:wrap}
+.flt button{border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;padding:6px 12px;border-radius:16px;cursor:pointer}
+.flt button[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.empty{padding:14px 16px;color:var(--mute);font-size:14px}
+/* info */
+dl{margin:0}
+dl div{padding:10px 16px;border-bottom:1px solid var(--line)}
+dl div:last-child{border-bottom:0}
+dt{font-weight:600}
+dd{margin:2px 0 0;color:var(--mute);font-size:14px}
+.warnbox{background:var(--warnbg);color:var(--ink);border-radius:10px;padding:12px 14px;margin:0 0 10px;font-size:14px}
+.warnbox b{color:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:13px;color:var(--mute);margin:0 0 16px}
+.reset{background:none;border:1px solid var(--line);color:var(--mute);border-radius:8px;padding:10px 14px;font:inherit;font-size:14px;cursor:pointer}
+code{font-size:14px;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+@media (max-width:600px){
+ .wk{grid-template-columns:1fr}
+ .wk>span:first-child{padding-bottom:0}
+ .counters b{font-size:19px}
+ .task{grid-template-columns:26px 1fr}
+ .task .due{grid-column:2;justify-self:start}
+ .theme{grid-template-columns:26px 22px 1fr}
+ .theme .w{grid-column:3}
+ .cols>div{border-left:0;border-top:1px solid var(--line)}
+ .cols>div:first-child{border-top:0}
+}
+@media (prefers-reduced-motion:reduce){.pbar i{transition:none}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+ <div class="hd">
+  <h1>Modul 1 · Studienplaner</h1>
+  <p>B.Sc. Psychologie, FernUni Hagen · Wintersemester 2026/27</p>
+  <div class="pbar"><i id="hfill"></i></div>
+  <div class="pstat"><span id="hcnt"></span><span id="hpct"></span></div>
+ </div>
+ <nav aria-label="Bereiche">
+  <button data-tab="start">Überblick</button>
+  <button data-tab="liste">Checkliste</button>
+  <button data-tab="kurse">Kurse</button>
+  <button data-tab="zeitplan">Wochenplan</button>
+  <button data-tab="infos">Infos &amp; Links</button>
+ </nav>
+</div></header>
+<main><div class="wrap" id="view"></div></main>
+
+<script>
+(function(){
+var D=function(s){var p=s.split("-");return new Date(+p[0],p[1]-1,+p[2])};
+var now=new Date();var TODAY=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+function dt(s){return Math.round((D(s)-TODAY)/864e5)}
+function f(s){var d=D(s);var r=("0"+d.getDate()).slice(-2)+"."+("0"+(d.getMonth()+1)).slice(-2)+".";return d.getFullYear()===2027?r+"27":r}
+var WD=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+
+var CN={psy:"Psychologie",fome:"Forschungsmethoden",wa:"Wiss. Arbeiten",kv:"Kulturelle Vielfalt",allg:"Allgemein",stud:"Rund ums Studium"};
+var KL={pvl:"PVL",pflicht:"Pflicht",wichtig:"Wichtig",frei:"Freiwillig"};
+
+function tk(id,g,c,k,t,s,e,d){return{id:id,g:g,c:c,k:k,t:t,s:s,e:e,d:d}}
+var TASKS=[
+tk("a1","vor","allg","wichtig","Willkommensvideos ansehen",null,"2026-10-11","Allgemeine Studienorganisation, Modul-1-Übersicht und die Kursvideos. Links unter „Infos & Links“."),
+tk("a2","vor","wa","pvl","Bei „Wissenschaftliches Arbeiten“ anmelden","2026-09-28","2026-10-25","Catalpa-Moodle öffnen, einloggen, Nutzungsbedingungen zustimmen, Schlüssel wissarb-ws26# eingeben. Offiziell 30./31.10. – der 25.10. ist die sichere Variante."),
+tk("a3","vor","allg","wichtig","Alle vier Moodle-Kurse einmal öffnen",null,"2026-10-11","Forschungsmethoden ist erst ab 01.10. freigeschaltet."),
+tk("a4","vor","allg","frei","Vorkurs Mathematik für Statistik weitermachen",null,"2026-10-11","Kurze Einheiten, mehrmals pro Woche."),
+tk("b1","okt","fome","pvl","F1: Forumsbeitrag beginnen","2026-10-12","2026-10-18","Offizieller Start der Betreuung. Abgabe erst bis 20.12., aber früh anfangen."),
+tk("n1","okt","allg","frei","Netzwerktreffen Psychologie Hamburg",null,"2026-10-13","17:30 Uhr, Campus Hamburg, Amsinckstraße 57. Vorher anmelden – Plätze sind begrenzt."),
+tk("b2","okt","psy","frei","Info-Veranstaltung „Orga“ Modul 1",null,"2026-10-13","19 Uhr, online. Überschneidet sich mit dem Netzwerktreffen."),
+tk("b3","okt","fome","pvl","Übungsgruppe Forschungsmethoden anmelden","2026-10-01","2026-10-31","Anleitung steht im Moodle-Kurs Forschungsmethoden."),
+tk("b4","okt","psy","frei","Übungsgruppe „Psychologie“ prüfen","2026-10-01","2026-10-31","Im Kurs nachsehen, ob und wie du dich anmeldest."),
+tk("b5","okt","kv","frei","Übungsgruppe „Kulturelle Vielfalt“ prüfen","2026-10-01","2026-10-31","Im Kurs nachsehen, ob und wie du dich anmeldest."),
+tk("b6","okt","wa","wichtig","E1: Fragebogen zur Gruppeneinteilung","2026-10-26","2026-11-08","Damit teilt dich die Kursleitung einer Arbeitsgruppe zu."),
+tk("c1","nov","wa","pvl","W1: Kennenlernphase","2026-11-09","2026-11-22","Erste Pflichtaufgabe in deiner Gruppe."),
+tk("c2","nov","wa","frei","E2: Eingangsbefragung","2026-11-19","2026-11-22",""),
+tk("d2","nov","wa","pvl","W2: Zusammenfassung eines wiss. Artikels","2026-11-23","2026-12-13","Gruppenarbeit."),
+tk("d1","dez","psy","wichtig","Info-Veranstaltung „Klausur-Orga“",null,"2026-12-02","19 Uhr. Hier erfährst du die genauen Klausurregeln."),
+tk("d3","dez","wa","frei","E3: Zwischenbefragung","2026-12-10","2026-12-13",""),
+tk("d4","dez","fome","pvl","F1: Forumsbeitrag abgeben","2026-10-12","2026-12-20",""),
+tk("e3","dez","allg","pflicht","Rückmeldung fürs Sommersemester","2026-12-01","2027-03-31","Nötig, um im nächsten Semester eingeschrieben zu bleiben."),
+tk("d5","dez","fome","pvl","F2: Methodenquiz","2026-12-14","2027-01-03","Frist liegt in der Betreuungspause – besser vor Weihnachten erledigen."),
+tk("d6","dez","wa","pvl","W3: Feedback-Brief an die Autor:innen","2026-12-14","2027-01-03","Gruppenarbeit über die Weihnachtspause. Früh absprechen."),
+tk("e1","jan","wa","pvl","W4: Peer-Review","2027-01-04","2027-01-17","Letzte Pflichtaufgabe. Danach endet der Kurs."),
+tk("e2","jan","wa","frei","E4: Abschlussbefragung","2027-01-04","2027-01-10",""),
+tk("f1","feb","allg","wichtig","Webcam kaufen und Technik-Selbsttest machen",null,"2027-02-15","Extern, per USB, HD, Autofokus. Selbsttest im Prüfungs-Moodle."),
+tk("f2","feb","allg","pflicht","Zur Klausur anmelden","2027-02-01","2027-02-15","pos.fernuni-hagen.de – danach keine Nachmeldung möglich."),
+tk("f3","feb","allg","wichtig","Selbständige Wiederholung","2027-02-08","2027-02-28","Alle Themen aus Psychologie, Forschungsmethoden und Kultureller Vielfalt."),
+tk("f4","feb","allg","pflicht","Klausur schreiben",null,null,"Ende Februar / Anfang März, digital von zuhause. Genaues Datum folgt."),
+tk("o1","stud","stud","wichtig","Einbürgerung an die FernUni melden",null,null,"E-Mail an bescheinigung@fernuni-hagen.de mit Matrikelnummer und Foto der Urkunde."),
+tk("o2","stud","stud","wichtig","Einbürgerungsurkunde bei BAföG hochladen",null,null,"Über bafoeg-digital.de nachreichen, nicht per E-Mail."),
+tk("o3","stud","stud","wichtig","BAföG-Bescheid abwarten",null,null,"Falls gefordert: Steuerbescheid der Eltern nachreichen."),
+tk("o4","stud","stud","pflicht","Semesterbeitrag bezahlen",null,null,"Sobald der Gebührenbescheid da ist: SEPA-Lastschrift oder Überweisung."),
+tk("o5","stud","stud","wichtig","3 Präsenz-VPh: EEG-Studie Uni Hamburg",null,null,"Termin buchen, VP-Stunden statt Geld wählen, Teilnahmebescheinigung mitnehmen."),
+tk("o6","stud","stud","wichtig","2 VPh: Grunderhebung online",null,null,"Über das Sona-System der FernUni."),
+tk("o7","stud","stud","wichtig","Gerrig-Buch: Leihfrist im Blick",null,null,"Online verlängern oder rechtzeitig zurückschicken: UB Hagen, Dokumentlieferung, Universitätsstraße 23, 58097 Hagen.")
+];
+var GROUPS=[["vor","Vor dem Start · bis 11.10."],["okt","Oktober"],["nov","November"],["dez","Dezember & Weihnachtspause"],["jan","Januar"],["feb","Februar & Klausur"],["stud","Rund ums Studium"]];
+
+var TH={
+psy:[["Psychologie als Wissenschaft","2026-10-12","2026-10-18"],["Forschungsmethoden der Psychologie","2026-10-19","2026-10-25"],["Biologische Grundlagen","2026-10-26","2026-11-01"],["Wahrnehmung","2026-11-02","2026-11-08"],["Bewusstsein","2026-11-09","2026-11-15"],["Lernen","2026-11-16","2026-11-22"],["Gedächtnis","2026-11-23","2026-11-29"],["Kognitive Prozesse","2026-11-30","2026-12-06"],["Emotion und Motivation","2026-12-07","2026-12-13"],["Entwicklung","2026-12-14","2026-12-20"],["Persönlichkeit","2027-01-04","2027-01-10"],["Sozialpsychologie","2027-01-11","2027-01-17"],["Gesundheit und Stress","2027-01-18","2027-01-24"],["Psychische Störungen","2027-01-25","2027-01-31"],["Psychotherapie","2027-02-01","2027-02-07"]],
+fome:[["Einführung in den Forschungsprozess","2026-10-12","2026-10-25"],["Forschungsethik","2026-10-26","2026-11-08"],["Messen und Erheben","2026-11-09","2026-11-22"],["Experimente – Grundlagen","2026-11-23","2026-12-06"],["Experimente – Fortsetzung","2026-12-07","2026-12-20"],["Nicht-experimentelle Methoden","2027-01-04","2027-01-10"],["Qualitative Methoden","2027-01-11","2027-01-24"],["Zusammenfassung und aktuelle Diskurse","2027-01-25","2027-02-07"]],
+kv:[["Einführung","2026-10-12","2026-10-25"],["Ethnizität und Rassismus","2026-10-26","2026-11-08"],["Gender und Sexismus","2026-11-09","2026-11-22"],["Alter und Ageism","2026-11-23","2026-12-06"],["Sexuelle Orientierung und Homophobie","2026-12-07","2027-01-10"],["Behinderung und Ableism","2027-01-11","2027-01-24"],["Soziale Schichtzugehörigkeit","2027-01-25","2027-02-07"]]};
+var PFX={psy:"g",fome:"f",kv:"k"};
+
+var COURSES=[
+{c:"psy",n:"Einführung in die Psychologie",pvl:false,open:"ab 28.09.",m:"https://moodle.fernuni-hagen.de/course/view.php?id=6335",v:"https://video.fernuni-hagen.de/Play/34910",
+ desc:"Der inhaltliche Überblick über die Psychologie in 15 Themen – von Biologischen Grundlagen bis Psychotherapie. Grundlage ist das Lehrbuch von Gerrig.",
+ p:["Keine PVL-Aufgaben","Alle 15 Themen sind Klausurstoff"],
+ fr:["Übungsgruppe (Anmeldung bis 31.10.)","Info „Orga“: 13.10., 19 Uhr","Info „Klausur-Orga“: 02.12., 19 Uhr"],
+ tip:["Ein Thema pro Woche – das ist der Takt für den ganzen Kurs.","Die Klausur-Orga am 02.12. ist die wichtigste Info-Veranstaltung des Semesters.","Ohne Abgabefristen leicht aufzuschieben: feste Lernzeiten einplanen."]},
+{c:"fome",n:"Einführung in die Forschungsmethoden",pvl:true,open:"ab 01.10.",m:"https://moodle.fernuni-hagen.de/course/view.php?id=6334",v:null,
+ desc:"Wie Psychologie forscht: Forschungsprozess, Ethik, Messen, Experimente und qualitative Methoden – 8 Themen.",
+ p:["PVL Teil 1: Übungsgruppe anmelden bis 31.10.","PVL: F1 Forumsbeitrag, 12.10.–20.12.","PVL: F2 Methodenquiz, bis 03.01.27","Alle 8 Themen sind Klausurstoff"],
+ fr:["Nichts ausdrücklich freiwillig"],
+ tip:["Der Kurs öffnet erst am 01.10.","Das Begrüßungsvideo gibt es nur im Moodle-Kurs.","F2 vor Weihnachten erledigen – in der Betreuungspause antwortet niemand."]},
+{c:"wa",n:"Einführung in das wissenschaftliche Arbeiten",pvl:true,open:"ab 28.09. (Catalpa-Moodle)",m:"https://moodle-ddll.fernuni-hagen.de/course/view.php?id=37",v:"https://video.fernuni-hagen.de/Play/34911",
+ desc:"Training in Kleingruppen: einen Fachartikel zusammenfassen, einen Feedback-Brief schreiben, Peer-Review geben.",
+ p:["PVL Teil 2: Kursanmeldung mit Schlüssel","W1 Kennenlernphase","W2 Zusammenfassung eines Artikels","W3 Feedback-Brief","W4 Peer-Review"],
+ fr:["E2 Eingangsbefragung","E3 Zwischenbefragung","E4 Abschlussbefragung"],
+ tip:["Eigene Plattform: einloggen, Nutzungsbedingungen zustimmen, dann Schlüssel wissarb-ws26# eingeben – ohne Leerzeichen.","E1 Fragebogen ist nicht rot markiert, aber nötig für die Gruppeneinteilung.","Die Gruppen teilt die Kursleitung zu, du suchst sie nicht selbst aus.","Kursende schon am 18.01.; W3 läuft über Weihnachten."]},
+{c:"kv",n:"Psychologie und kulturelle Vielfalt",pvl:false,open:"ab 28.09.",m:"https://moodle.fernuni-hagen.de/course/view.php?id=6333",v:"https://video.fernuni-hagen.de/Play/34912",
+ desc:"Fachgeschichte und psychologische Aspekte von Vielfalt: Rassismus, Sexismus, Ageism, Homophobie, Ableism und soziale Schicht – 7 Themen.",
+ p:["Keine PVL-Aufgaben","Alle 7 Themen sind Klausurstoff"],
+ fr:["Übungsgruppe (Anmeldung bis 31.10.)"],
+ tip:["Meist zwei Wochen pro Thema – ruhigeres Tempo.","Kein Wochendruck: gut zum Einplanen in lockeren Wochen."]}
+];
+
+var WEEKS=[
+["2026-10-01","2026-10-11","Übungsgruppe anmelden (bis 31.10.)","!Übungsgruppe anmelden (bis 31.10.)","!Kursanmeldung|Kursumgebung erkunden","Übungsgruppe anmelden (bis 31.10.)"],
+["2026-10-12","2026-10-18","1 Psychologie als Wissenschaft|Info „Orga“ 13.10., 19 Uhr","1 Einführung in den Forschungsprozess|!Beginn F1 Forumsbeitrag","!Kursanmeldung|Kursumgebung erkunden","1 Einführung"],
+["2026-10-19","2026-10-25","2 Forschungsmethoden der Psychologie","1 Einführung in den Forschungsprozess","!Kursanmeldung|Kursumgebung erkunden","1 Einführung"],
+["2026-10-26","2026-11-01","3 Biologische Grundlagen|Übungsgruppe bis 31.10.","2 Forschungsethik|!Übungsgruppe bis 31.10.","!Kursanmeldung bis 31.10.|E1 Fragebogen zur Gruppeneinteilung","2 Ethnizität und Rassismus|Übungsgruppe bis 31.10."],
+["2026-11-02","2026-11-08","4 Wahrnehmung","2 Forschungsethik","E1 Fragebogen zur Gruppeneinteilung","2 Ethnizität und Rassismus"],
+["2026-11-09","2026-11-15","5 Bewusstsein","3 Messen und Erheben","!W1 Kennenlernphase","3 Gender und Sexismus"],
+["2026-11-16","2026-11-22","6 Lernen","3 Messen und Erheben","!W1 Kennenlernphase|E2 Eingangsbefragung (freiwillig)","3 Gender und Sexismus"],
+["2026-11-23","2026-11-29","7 Gedächtnis","4 Experimente – Grundlagen","!W2 Zusammenfassung","4 Alter und Ageism"],
+["2026-11-30","2026-12-06","8 Kognitive Prozesse|Info „Klausur-Orga“ 02.12., 19 Uhr","4 Experimente – Grundlagen","!W2 Zusammenfassung","4 Alter und Ageism"],
+["2026-12-07","2026-12-13","9 Emotion und Motivation","5 Experimente – Fortsetzung","!W2 Zusammenfassung|E3 Zwischenbefragung (freiwillig)","5 Sexuelle Orientierung und Homophobie"],
+["2026-12-14","2026-12-20","10 Entwicklung","5 Experimente – Fortsetzung|!Deadline F1 Forumsbeitrag|!F2 Methodenquiz","!W3 Feedback-Brief","5 Sexuelle Orientierung und Homophobie"],
+["2026-12-21","2026-12-27","Betreuungspause","Betreuungspause","!W3 Feedback-Brief","Betreuungspause"],
+["2026-12-28","2027-01-03","Betreuungspause","!Deadline F2 Methodenquiz","!W3 Feedback-Brief","Betreuungspause"],
+["2027-01-04","2027-01-10","11 Persönlichkeit","6 Nicht-experimentelle Methoden","!W4 Peer-Review|E4 Abschlussbefragung (freiwillig)","5 Sexuelle Orientierung und Homophobie"],
+["2027-01-11","2027-01-17","12 Sozialpsychologie","7 Qualitative Methoden","!W4 Peer-Review","6 Behinderung und Ableism"],
+["2027-01-18","2027-01-24","13 Gesundheit und Stress","7 Qualitative Methoden","Kursende","6 Behinderung und Ableism"],
+["2027-01-25","2027-01-31","14 Psychische Störungen","8 Zusammenfassung und aktuelle Diskurse","–","7 Soziale Schichtzugehörigkeit"],
+["2027-02-01","2027-02-07","15 Psychotherapie|Klausuranmeldung läuft (bis 15.02.)","8 Zusammenfassung und aktuelle Diskurse","–","7 Soziale Schichtzugehörigkeit"],
+["2027-02-08","2027-02-28","Selbständige Wiederholung","Selbständige Wiederholung","–","Selbständige Wiederholung"]
+];
+
+var st={};
+try{st=JSON.parse(localStorage.getItem("m1-checks")||"{}")||{}}catch(e){st={}}
+function save(){try{localStorage.setItem("m1-checks",JSON.stringify(st))}catch(e){}}
+var tab="start",flt="offen";
+try{var t0=location.hash.replace("#","");if(["start","liste","kurse","zeitplan","infos"].indexOf(t0)>-1)tab=t0}catch(e){}
+
+function tag(k){return '<span class="tag '+k+'">'+KL[k]+'</span>'}
+function stat(t){
+ if(st[t.id])return{c:"done",l:"erledigt"};
+ if(!t.e)return{c:"",l:""};
+ var d=dt(t.e);
+ if(d<0)return{c:"over",l:"überfällig"};
+ if(d===0)return{c:"urgent",l:"heute fällig"};
+ if(t.s&&dt(t.s)>0)return{c:"",l:"startet in "+dt(t.s)+(dt(t.s)===1?" Tag":" Tagen")};
+ if(d<=3)return{c:"urgent",l:"noch "+d+(d===1?" Tag":" Tage")};
+ return{c:t.s?"active":"",l:(t.s?"läuft · ":"")+"noch "+d+" Tage"};
+}
+function dl(t){if(t.s&&t.e)return f(t.s)+" – "+f(t.e);if(t.e)return"bis "+f(t.e);return"ohne festes Datum"}
+function row(t){
+ var s=stat(t),on=!!st[t.id];
+ return '<label class="task k-'+t.k+(on?' is-done':'')+'"><input type="checkbox" data-id="'+t.id+'"'+(on?' checked':'')+' aria-label="'+t.t.replace(/"/g,"")+'">'
+ +'<span><span class="ttl">'+t.t+'</span>'+tag(t.k)
+ +'<span class="tmeta"><span class="dot c-'+t.c+'"></span>'+CN[t.c]+' · '+dl(t)+'</span>'
+ +(t.d?'<span class="tdesc">'+t.d+'</span>':'')+'</span>'
+ +(s.l?'<span class="due '+s.c+'">'+s.l+'</span>':'<span></span>')+'</label>';
+}
+function curWeek(){for(var i=0;i<WEEKS.length;i++){if(dt(WEEKS[i][0])<=0&&dt(WEEKS[i][1])>=0)return i}return -1}
+function cell(s){return s.split("|").map(function(x){return x.charAt(0)==="!"?'<span class="pv">PVL</span>'+x.slice(1):x}).join("<br>")}
+function allThemes(){var n=0,d=0;["psy","fome","kv"].forEach(function(c){TH[c].forEach(function(x,i){n++;if(st[PFX[c]+(i+1)])d++})});return[d,n]}
+
+function header(){
+ var n=TASKS.length,d=TASKS.filter(function(t){return st[t.id]}).length,p=Math.round(d/n*100);
+ document.getElementById("hfill").style.width=p+"%";
+ document.getElementById("hcnt").textContent=d+" von "+n+" Aufgaben erledigt";
+ document.getElementById("hpct").textContent=p+" %";
+ [].forEach.call(document.querySelectorAll("nav button"),function(b){if(b.dataset.tab===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+}
+
+function vStart(){
+ var h='<h2 class="v">Überblick</h2><p class="lead">Was jetzt ansteht – automatisch nach heutigem Datum sortiert.</p>';
+ function cnt(label,s,e){var a=dt(s),b=e?dt(e):a;var v=a>0?a:(b>=0?"läuft":"✓");var u=a>0?(a===1?"Tag bis ":"Tage bis ")+label:label;return'<div><b>'+v+'</b><span>'+u+'</span></div>'}
+ h+='<section class="card"><div class="pad today">Heute ist <b>'+WD[TODAY.getDay()]+', '+("0"+TODAY.getDate()).slice(-2)+"."+("0"+(TODAY.getMonth()+1)).slice(-2)+"."+TODAY.getFullYear()+'</b></div><div class="counters">'
+  +cnt("Semesterstart","2026-10-01")+cnt("Betreuung startet","2026-10-12")+cnt("Klausuranmeldung","2027-02-01","2027-02-15")+'</div></section>';
+ var open=TASKS.filter(function(t){return !st[t.id]&&t.e}).sort(function(a,b){return D(a.e)-D(b.e)});
+ var over=open.filter(function(t){return dt(t.e)<0}),next=open.filter(function(t){return dt(t.e)>=0}).slice(0,6);
+ if(over.length)h+='<section class="card"><h3>Überfällig <small>'+over.length+' offen</small></h3>'+over.map(row).join("")+'</section>';
+ h+='<section class="card"><h3>Als Nächstes fällig <small>die nächsten '+next.length+'</small></h3>'+(next.length?next.map(row).join(""):'<p class="empty">Keine offenen Fristen mehr. Stark!</p>')+'</section>';
+ var wi=curWeek(),w,lab;
+ if(wi>-1){w=WEEKS[wi];lab="Diese Woche · "+f(w[0])+" – "+f(w[1])}
+ else if(dt(WEEKS[0][0])>0){w=WEEKS[0];lab="Ab "+f(w[0])+" · erste Woche"}
+ if(w){h+='<section class="card"><h3>'+lab+'<small><a href="#zeitplan" data-tab="zeitplan">ganzer Plan</a></small></h3>'
+  +[["psy",2],["fome",3],["wa",4],["kv",5]].map(function(x){return'<div class="wk"><span><span class="dot c-'+x[0]+'"></span>'+CN[x[0]]+'</span><span>'+cell(w[x[1]])+'</span></div>'}).join("")+'</section>'}
+ var pv=TASKS.filter(function(t){return t.k==="pvl"}),pd=pv.filter(function(t){return st[t.id]}).length,th=allThemes();
+ var all=TASKS.filter(function(t){return st[t.id]}).length;
+ function pr(l,a,b,cl){var p=b?Math.round(a/b*100):0;return'<div class="prow"><div><span>'+l+'</span><span>'+a+' / '+b+'</span></div><div class="pbar"><i class="'+(cl||"")+'" style="width:'+p+'%"></i></div></div>'}
+ h+='<section class="card"><h3>Fortschritt</h3><div class="pad">'+pr("PVL-Aufgaben (Klausurzulassung)",pd,pv.length,"pv")+pr("Themen durchgearbeitet",th[0],th[1])+pr("Alle Aufgaben",all,TASKS.length)+'</div></section>';
+ return h;
+}
+
+function vListe(){
+ var h='<h2 class="v">Checkliste</h2><p class="lead">Alles, was zu tun ist – nach Monaten geordnet. Tippe eine Aufgabe an, um sie abzuhaken.</p>';
+ h+='<div class="legend"><span>'+tag("pvl")+' nötig für die Klausurzulassung</span><span>'+tag("pflicht")+' Pflicht, aber keine PVL</span><span>'+tag("wichtig")+' dringend empfohlen</span><span>'+tag("frei")+' freiwillig</span></div>';
+ h+='<div class="flt" role="group" aria-label="Filter">'+[["offen","Nur offene"],["pvl","Nur PVL"],["alle","Alle"]].map(function(x){return'<button data-flt="'+x[0]+'" aria-pressed="'+(flt===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>';
+ GROUPS.forEach(function(g){
+  var all=TASKS.filter(function(t){return t.g===g[0]});
+  var vis=all.filter(function(t){return flt==="alle"||(flt==="offen"&&!st[t.id])||(flt==="pvl"&&t.k==="pvl")});
+  var d=all.filter(function(t){return st[t.id]}).length;
+  if(flt==="pvl"&&!vis.length)return;
+  h+='<section class="card"><h3>'+g[1]+'<small>'+(d===all.length?'✓ ':'')+d+' / '+all.length+' erledigt</small></h3>'+(vis.length?vis.map(row).join(""):'<p class="empty">Alles erledigt in diesem Abschnitt.</p>')+'</section>';
+ });
+ h+='<button class="reset" data-reset="1">Alle Häkchen zurücksetzen</button>';
+ return h;
+}
+
+function vKurse(){
+ var h='<h2 class="v">Die 4 Kurse</h2><p class="lead">Was Pflicht ist, was freiwillig ist, alle Fristen und der Themenplan – pro Kurs.</p>';
+ h+='<div class="pills">'+COURSES.map(function(c){return'<button data-jump="k-'+c.c+'"><span class="dot c-'+c.c+'"></span>'+CN[c.c]+'</button>'}).join("")+'</div>';
+ COURSES.forEach(function(c){
+  h+='<section class="card" id="k-'+c.c+'"><div class="chead"><h3><span class="dot c-'+c.c+'"></span>'+c.n+'</h3>'
+   +'<p>'+(c.pvl?tag("pvl")+' Teil der Prüfungsvorleistung':'<span class="tag frei">keine PVL</span> nur Klausurstoff')+' · Moodle '+c.open+'</p>'
+   +'<p style="color:var(--ink)">'+c.desc+'</p><div class="links"><a href="'+c.m+'" target="_blank" rel="noopener">Moodle-Kurs öffnen</a>'
+   +(c.v?'<a href="'+c.v+'" target="_blank" rel="noopener">Einführungsvideo</a>':'<span>Video nur in Moodle</span>')+'</div></div>';
+  h+='<div class="cols"><div><h4 class="r">Pflicht</h4><ul>'+c.p.map(function(x){return"<li>"+x+"</li>"}).join("")+'</ul></div>'
+   +'<div><h4 class="g">Freiwillig</h4><ul>'+c.fr.map(function(x){return"<li>"+x+"</li>"}).join("")+'</ul></div>'
+   +'<div><h4 class="b">Gut zu wissen</h4><ul>'+c.tip.map(function(x){return"<li>"+x+"</li>"}).join("")+'</ul></div></div>';
+  var ts=TASKS.filter(function(t){return t.c===c.c});
+  if(ts.length)h+='<p class="sub">Aufgaben &amp; Fristen</p>'+ts.map(row).join("");
+  if(TH[c.c]){
+   var d=TH[c.c].filter(function(x,i){return st[PFX[c.c]+(i+1)]}).length;
+   h+='<p class="sub">Themenplan · '+d+' / '+TH[c.c].length+' durchgearbeitet</p>';
+   TH[c.c].forEach(function(x,i){var id=PFX[c.c]+(i+1),on=!!st[id],nw=dt(x[1])>=0&&dt(x[2])<=0;
+    h+='<label class="theme'+(on?' is-done':'')+(nw?' now':'')+'"><input type="checkbox" data-id="'+id+'"'+(on?' checked':'')+' aria-label="Thema '+(i+1)+'"><span class="n">'+(i+1)+'</span><span class="tt">'+x[0]+(nw?' <span class="nowtag">jetzt</span>':'')+'</span><span class="w">'+f(x[1])+' – '+f(x[2])+'</span></label>'});
+  }
+  h+='</section>';
+ });
+ return h;
+}
+
+function vZeit(){
+ var wi=curWeek();
+ var h='<h2 class="v">Wochenplan</h2><p class="lead">Woche für Woche, alle 4 Kurse nebeneinander. '+tag("pvl")+' markiert Pflichtaufgaben für die Klausurzulassung.</p>';
+ if(wi>-1)h+='<p><button class="reset" data-jump="w'+wi+'">Zur aktuellen Woche springen</button></p>';
+ WEEKS.forEach(function(w,i){
+  var pause=w[2]==="Betreuungspause",past=dt(w[1])<0,isn=i===wi;
+  h+='<section class="card wcard'+(isn?' now':'')+(pause?' pause':'')+(past?' past':'')+'" id="w'+i+'"><h3>'+f(w[0])+' – '+f(w[1])+(pause?' · Betreuungspause':'')+(isn?' <span class="nowtag">diese Woche</span>':'<small>'+(i===0?'Vorbereitung':i<=18?'':'')+'</small>')+'</h3>'
+   +[["psy",2],["fome",3],["wa",4],["kv",5]].map(function(x){return'<div class="wk"><span><span class="dot c-'+x[0]+'"></span>'+CN[x[0]]+'</span><span>'+cell(w[x[1]])+'</span></div>'}).join("")+'</section>';
+ });
+ h+='<section class="card"><h3>Danach</h3><div class="pad">Klausuranmeldung 01.–15.02.27 · Klausur Ende Februar / Anfang März 2027 (digital, von zuhause).</div></section>';
+ return h;
+}
+
+function vInfos(){
+ return '<h2 class="v">Infos &amp; Links</h2><p class="lead">Alles zum Nachschlagen.</p>'
+ +'<section class="card"><h3>Noch offene Fragen</h3><div class="pad">'
+ +'<div class="warnbox"><b>Anmeldefrist Wiss. Arbeiten:</b> Die Unterlagen nennen 25.10., 30.10. und 31.10. Melde dich so früh wie möglich an, dann spielt es keine Rolle.</div>'
+ +'<div class="warnbox"><b>Übungsgruppen Psychologie &amp; Kulturelle Vielfalt:</b> Ob du dich selbst anmelden musst, steht erst im jeweiligen Moodle-Kurs.</div>'
+ +'<div class="warnbox"><b>13.10.:</b> Netzwerktreffen Hamburg (17:30) und Info „Orga“ (19 Uhr) überschneiden sich.</div>'
+ +'<div class="warnbox" style="margin:0"><b>Uhrzeiten der Fristen:</b> Bis wann genau am letzten Tag abgegeben werden muss, steht in Moodle.</div></div></section>'
+ +'<section class="card"><h3>Wichtige Links</h3><dl>'
+ +'<div><dt><a href="https://moodle.fernuni-hagen.de/course/view.php?id=6331" target="_blank" rel="noopener">Modul-1-Übersicht in Moodle</a></dt><dd>Einstieg zu allen 4 Kursen</dd></div>'
+ +'<div><dt><a href="https://moodle-ddll.fernuni-hagen.de/course/view.php?id=37" target="_blank" rel="noopener">Catalpa-Moodle: Wiss. Arbeiten</a></dt><dd>Einschreibeschlüssel: <code>wissarb-ws26#</code></dd></div>'
+ +'<div><dt><a href="https://pos.fernuni-hagen.de" target="_blank" rel="noopener">Prüfungsportal (POS)</a></dt><dd>Klausuranmeldung, Leistungsübersicht, PVL-Status</dd></div>'
+ +'<div><dt><a href="https://video.fernuni-hagen.de/Play/34897" target="_blank" rel="noopener">Video: Allgemeine Studienorganisation</a></dt><dd>Aus der Willkommensmail</dd></div>'
+ +'<div><dt><a href="https://video.fernuni-hagen.de/Play/34896" target="_blank" rel="noopener">Video: Modul-1-Übersicht</a></dt><dd>Aus der Willkommensmail</dd></div>'
+ +'<div><dt><a href="https://www.fernuni-hagen.de/psychologie/studium/portale/bscpsy/studium/module/modul-1.shtml" target="_blank" rel="noopener">Modul-1-Seite im Studienportal</a></dt><dd>Offizielle Modulinfos</dd></div></dl></section>'
+ +'<section class="card"><h3>Kontakte</h3><dl>'
+ +'<div><dt>Fragen zu Modul 1</dt><dd>lehre-modul1-bscpsy@fernuni-hagen.de · Tel. 02331 987-2178</dd></div>'
+ +'<div><dt>Studierendensekretariat (Daten ändern)</dt><dd>bescheinigung@fernuni-hagen.de</dd></div>'
+ +'<div><dt>Modulbetreuung</dt><dd>Dr. Verena Walpurger, Lehrstuhl Sozialpsychologie</dd></div></dl></section>'
+ +'<section class="card"><h3>Begriffe kurz erklärt</h3><dl>'
+ +'<div><dt>PVL (Prüfungsvorleistung)</dt><dd>Pflichtaufgaben in Forschungsmethoden und Wiss. Arbeiten. Ohne sie darfst du dich nicht zur Klausur anmelden.</dd></div>'
+ +'<div><dt>Übungsgruppe</dt><dd>Kleinere Betreuungsgruppe innerhalb eines Kurses. In Forschungsmethoden ist die Anmeldung Pflicht.</dd></div>'
+ +'<div><dt>Catalpa-Moodle</dt><dd>Eigene Moodle-Plattform nur für Wiss. Arbeiten. Gleicher Login, aber eigene Einschreibung.</dd></div>'
+ +'<div><dt>W1–W4 / F1–F2</dt><dd>Pflichtaufgaben: W = Wiss. Arbeiten, F = Forschungsmethoden.</dd></div>'
+ +'<div><dt>E1–E4</dt><dd>Befragungen in Wiss. Arbeiten. E1 brauchst du für die Gruppeneinteilung, E2–E4 sind freiwillig.</dd></div>'
+ +'<div><dt>Peer-Review</dt><dd>Du gibst Feedback auf die Arbeit einer anderen Gruppe.</dd></div>'
+ +'<div><dt>Betreuungspause</dt><dd>21.12.–03.01.: keine Betreuung durch das Lehrteam. Fristen laufen trotzdem weiter.</dd></div>'
+ +'<div><dt>Rückmeldung</dt><dd>Anmeldung fürs nächste Semester (01.12.–31.03.).</dd></div></dl></section>'
+ +'<section class="card"><h3>Hinweis</h3><div class="pad" style="font-size:14px;color:var(--mute)">Deine Häkchen werden nur in diesem Browser auf diesem Gerät gespeichert. Die Kalenderdatei mit allen Terminen bekommst du separat im Chat. Grundlage: offizielle Zeitpläne WS 26/27 und die Willkommensmail vom 28.09.2026 – bei Änderungen gilt immer Moodle.</div></section>';
+}
+
+function render(){
+ header();
+ var v=document.getElementById("view");
+ v.innerHTML=tab==="start"?vStart():tab==="liste"?vListe():tab==="kurse"?vKurse():tab==="zeitplan"?vZeit():vInfos();
+}
+document.addEventListener("change",function(e){var id=e.target.getAttribute&&e.target.getAttribute("data-id");if(id){st[id]=e.target.checked;save();var y=window.scrollY;render();window.scrollTo(0,y)}});
+document.addEventListener("click",function(e){
+ var t=e.target.closest("[data-tab]");if(t){e.preventDefault();tab=t.dataset.tab;try{history.replaceState(null,"","#"+tab)}catch(x){}render();window.scrollTo(0,0);return}
+ var fl=e.target.closest("[data-flt]");if(fl){flt=fl.dataset.flt;render();return}
+ var j=e.target.closest("[data-jump]");if(j){var el=document.getElementById(j.dataset.jump);if(el)el.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"});return}
+ if(e.target.closest("[data-reset]")){if(confirm("Alle Häkchen wirklich löschen?")){st={};save();render()}}
+});
+render();
+})();
+</script>
+</body>
+</html>
