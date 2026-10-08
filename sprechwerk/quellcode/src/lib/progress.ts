@@ -1,5 +1,7 @@
 // Fortschritt: reine Funktionen ohne Seiteneffekte.
 
+import { LADDER_PRESETS } from '../courage';
+
 export type Outcome = 'better' | 'expected' | 'harder' | 'notyet' | 'skipped';
 
 export interface MissionEntry {
@@ -20,6 +22,39 @@ export interface StageEntry {
   seconds: number;
 }
 
+/** Eine Stufe der Angst-Leiter. Vorschläge haben feste IDs, eigene Stufen zufällige. */
+export interface LadderStep {
+  id: string;
+  text: string;
+  /** Geschätzte Angst, 0–10. */
+  fear: number;
+  done: boolean;
+  /** Nachher erlebt, 0–10. */
+  actual: number | null;
+  date: string | null;
+  custom: boolean;
+  hidden: boolean;
+  updatedAt: number;
+}
+
+export interface ThoughtEntry {
+  id: string;
+  date: string;
+  thought: string;
+  /** Wie sehr geglaubt, 0–10, vorher und nachher. */
+  before: number;
+  after: number;
+  against: string;
+  friend: string;
+  balanced: string;
+}
+
+export interface WinEntry {
+  id: string;
+  date: string;
+  text: string;
+}
+
 export interface Progress {
   v: 1;
   days: string[];
@@ -30,6 +65,11 @@ export interface Progress {
   bestExhale: number;
   focus: number[];
   stage: StageEntry[];
+  ladder: LadderStep[];
+  thoughts: ThoughtEntry[];
+  wins: WinEntry[];
+  /** Wie oft jede Mut-Übung gemacht wurde. */
+  tools: Record<string, number>;
   updatedAt: number;
 }
 
@@ -43,6 +83,10 @@ export const EMPTY_PROGRESS: Progress = {
   bestExhale: 0,
   focus: [],
   stage: [],
+  ladder: [],
+  thoughts: [],
+  wins: [],
+  tools: {},
   updatedAt: 0,
 };
 
@@ -97,6 +141,54 @@ function isStage(value: unknown): value is StageEntry {
   );
 }
 
+const str = (v: unknown, max = 600): string | null => (typeof v === 'string' ? v.slice(0, max) : null);
+
+function toLadder(value: unknown): LadderStep | null {
+  if (!value || typeof value !== 'object') return null;
+  const r = value as Record<string, unknown>;
+  const text = str(r.text, 200);
+  if (typeof r.id !== 'string' || !text || !isScore(r.fear)) return null;
+  return {
+    id: r.id,
+    text,
+    fear: r.fear,
+    done: r.done === true,
+    actual: isScore(r.actual) ? r.actual : null,
+    date: typeof r.date === 'string' && DAY_RE.test(r.date) ? r.date : null,
+    custom: r.custom === true,
+    hidden: r.hidden === true,
+    updatedAt: typeof r.updatedAt === 'number' && Number.isFinite(r.updatedAt) ? r.updatedAt : 0,
+  };
+}
+
+function toThought(value: unknown): ThoughtEntry | null {
+  if (!value || typeof value !== 'object') return null;
+  const r = value as Record<string, unknown>;
+  const thought = str(r.thought);
+  if (typeof r.id !== 'string' || typeof r.date !== 'string' || !DAY_RE.test(r.date) || !thought) return null;
+  if (!isScore(r.before) || !isScore(r.after)) return null;
+  return {
+    id: r.id,
+    date: r.date,
+    thought,
+    before: r.before,
+    after: r.after,
+    against: str(r.against) ?? '',
+    friend: str(r.friend) ?? '',
+    balanced: str(r.balanced) ?? '',
+  };
+}
+
+function toWin(value: unknown): WinEntry | null {
+  if (!value || typeof value !== 'object') return null;
+  const r = value as Record<string, unknown>;
+  const text = str(r.text, 400);
+  if (typeof r.id !== 'string' || typeof r.date !== 'string' || !DAY_RE.test(r.date) || !text) return null;
+  return { id: r.id, date: r.date, text };
+}
+
+const keep = <T,>(list: (T | null)[]): T[] => list.filter((x): x is T => x !== null);
+
 const byDateThenId = (x: { date: string; id: string }, y: { date: string; id: string }) =>
   x.date === y.date ? x.id.localeCompare(y.id) : x.date.localeCompare(y.date);
 
@@ -125,6 +217,15 @@ export function normalize(raw: unknown): Progress {
     ? r.focus.filter((f): f is number => f === 1 || f === 2 || f === 3 || f === 4)
     : [];
   const stage = Array.isArray(r.stage) ? r.stage.filter(isStage).slice(-100) : [];
+  const ladder = Array.isArray(r.ladder) ? keep(r.ladder.map(toLadder)).slice(0, 100) : [];
+  const thoughts = Array.isArray(r.thoughts) ? keep(r.thoughts.map(toThought)).slice(-100) : [];
+  const wins = Array.isArray(r.wins) ? keep(r.wins.map(toWin)).slice(-300) : [];
+  const tools: Record<string, number> = {};
+  if (r.tools && typeof r.tools === 'object') {
+    for (const [k, v] of Object.entries(r.tools as Record<string, unknown>)) {
+      if (k.length <= 40 && typeof v === 'number' && v > 0) tools[k] = Math.floor(v);
+    }
+  }
   return {
     v: 1,
     days: [...new Set(days)].sort().slice(-400),
@@ -135,6 +236,10 @@ export function normalize(raw: unknown): Progress {
     bestExhale: num(r.bestExhale),
     focus,
     stage,
+    ladder,
+    thoughts,
+    wins,
+    tools,
     updatedAt: num(r.updatedAt),
   };
 }
@@ -156,6 +261,18 @@ export function merge(a: Progress, b: Progress): Progress {
   const stage = [...stageById.values()].sort(byDateThenId).slice(-100);
   const moments: Record<string, number> = { ...a.moments };
   for (const [k, v] of Object.entries(b.moments)) moments[k] = Math.max(moments[k] ?? 0, v);
+  const ladderById = new Map<string, LadderStep>();
+  for (const step of [...older.ladder, ...newer.ladder]) {
+    const prev = ladderById.get(step.id);
+    if (!prev || step.updatedAt >= prev.updatedAt) ladderById.set(step.id, step);
+  }
+  const union = <T extends { id: string; date: string }>(x: T[], y: T[], max: number): T[] => {
+    const m = new Map<string, T>();
+    for (const item of [...x, ...y]) m.set(item.id, item);
+    return [...m.values()].sort(byDateThenId).slice(-max);
+  };
+  const tools: Record<string, number> = { ...a.tools };
+  for (const [k, v] of Object.entries(b.tools)) tools[k] = Math.max(tools[k] ?? 0, v);
   return {
     v: 1,
     days,
@@ -166,6 +283,10 @@ export function merge(a: Progress, b: Progress): Progress {
     bestExhale: Math.max(a.bestExhale, b.bestExhale),
     focus: newer.focus.length ? newer.focus : older.focus,
     stage,
+    ladder: [...ladderById.values()],
+    thoughts: union(a.thoughts, b.thoughts, 100),
+    wins: union(a.wins, b.wins, 300),
+    tools,
     updatedAt: Math.max(a.updatedAt, b.updatedAt),
   };
 }
@@ -270,4 +391,60 @@ export function completeSession(
     missions,
     focus,
   };
+}
+
+// ---------------------------------------------------------------- Mut
+
+/** Alle sichtbaren Stufen der Angst-Leiter: Vorschläge plus eigene, sortiert nach Angst. */
+export function ladderSteps(p: Progress): LadderStep[] {
+  const stored = new Map(p.ladder.map((s) => [s.id, s]));
+  const presets: LadderStep[] = LADDER_PRESETS.map(
+    (pre) =>
+      stored.get(pre.id) ?? {
+        id: pre.id,
+        text: pre.text,
+        fear: pre.fear,
+        done: false,
+        actual: null,
+        date: null,
+        custom: false,
+        hidden: false,
+        updatedAt: 0,
+      },
+  );
+  const custom = p.ladder.filter((s) => s.custom);
+  return [...presets, ...custom]
+    .filter((s) => !s.hidden)
+    .sort((x, y) => x.fear - y.fear || Number(x.custom) - Number(y.custom) || x.id.localeCompare(y.id));
+}
+
+export function saveLadderStep(p: Progress, step: LadderStep): Progress {
+  const next = { ...step, updatedAt: Date.now() };
+  const exists = p.ladder.some((s) => s.id === step.id);
+  return { ...p, ladder: exists ? p.ladder.map((s) => (s.id === step.id ? next : s)) : [...p.ladder, next].slice(0, 100) };
+}
+
+export function newLadderStep(text: string, fear: number): LadderStep {
+  return { id: `c${makeId()}`, text: text.trim().slice(0, 200), fear, done: false, actual: null, date: null, custom: true, hidden: false, updatedAt: 0 };
+}
+
+export function addWins(p: Progress, texts: string[], today: string = dayKey()): Progress {
+  const fresh = texts
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map((text) => ({ id: makeId(), date: today, text: text.slice(0, 400) }));
+  if (!fresh.length) return p;
+  return { ...p, wins: [...p.wins, ...fresh].slice(-300) };
+}
+
+export function removeWin(p: Progress, id: string): Progress {
+  return { ...p, wins: p.wins.filter((w) => w.id !== id) };
+}
+
+export function addThought(p: Progress, entry: Omit<ThoughtEntry, 'id' | 'date'>, today: string = dayKey()): Progress {
+  return { ...p, thoughts: [...p.thoughts, { ...entry, id: makeId(), date: today }].slice(-100) };
+}
+
+export function markTool(p: Progress, id: string): Progress {
+  return { ...p, tools: { ...p.tools, [id]: (p.tools[id] ?? 0) + 1 } };
 }

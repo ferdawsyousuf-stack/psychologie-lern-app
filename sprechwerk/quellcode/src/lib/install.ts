@@ -103,6 +103,14 @@ export function useInstall(): { mode: InstallMode; install: () => Promise<void>;
 export function setupWebApp(): void {
   if (!__PWA__) return;
   if ('serviceWorker' in navigator) {
+    // Neue Version: Sobald der neue Service Worker übernimmt, einmal neu laden (kurz nach dem Start).
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloading) return;
+      reloading = true;
+      window.location.reload();
+    });
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(() => undefined);
     });

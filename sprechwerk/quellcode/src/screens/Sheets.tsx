@@ -162,7 +162,7 @@ export function SourcesSheet({ onClose }: { onClose: () => void }) {
     <SheetFrame
       icon={<BookOpen size={12} className={iconClass} />}
       title="Die Wissenschaft"
-      subtitle={`${count} Quellen aus vier Bereichen`}
+      subtitle={`${count} Quellen aus ${SOURCE_GROUPS.length} Bereichen`}
       heading="Worauf Sprechwerk aufbaut"
       onClose={onClose}
       footer={<SlideToConfirm label="Zurück" onConfirm={onClose} />}

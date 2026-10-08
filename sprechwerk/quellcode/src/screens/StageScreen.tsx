@@ -10,6 +10,7 @@ import { buzz, chime, unlockAudio, useWakeLock } from '../lib/device';
 import { useLayout } from '../lib/layout';
 import { StageBackground } from '../components/StageBackground';
 import { ShuffleButton, WhyNote, delay, fmtTime } from '../components/ui';
+import { Rating } from '../components/Rating';
 
 type Phase = 'hero' | 'before' | 'live' | 'after' | 'result';
 
@@ -86,36 +87,6 @@ function Stat({ icon, value, label, animDelay }: { icon: ReactNode; value: strin
       {icon}
       <div className="text-xl font-normal leading-tight text-white tabular-nums">{value}</div>
       <div className="text-xs font-light leading-snug text-white/60">{label}</div>
-    </div>
-  );
-}
-
-function Rating({ value, onChange, label }: { value: number | null; onChange: (n: number) => void; label: string }) {
-  return (
-    <div>
-      <div role="radiogroup" aria-label={label} className="grid grid-cols-11 gap-1">
-        {Array.from({ length: 11 }, (_, n) => (
-          <button
-            key={n}
-            type="button"
-            role="radio"
-            aria-checked={value === n}
-            onClick={() => {
-              onChange(n);
-              buzz(8);
-            }}
-            className={`h-9 rounded-full text-[13px] tabular-nums transition-colors duration-200 ${
-              value === n ? 'liquid-glass-selected font-semibold text-white' : 'liquid-glass text-white/75'
-            }`}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
-      <div className="mt-1.5 flex justify-between px-1 text-[11px] font-light text-white/50">
-        <span>ganz entspannt</span>
-        <span>maximal</span>
-      </div>
     </div>
   );
 }

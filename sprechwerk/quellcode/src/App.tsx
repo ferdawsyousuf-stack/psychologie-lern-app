@@ -11,13 +11,15 @@ import { FocusScreen } from './screens/FocusScreen';
 import { SessionScreen } from './screens/SessionScreen';
 import { OverviewScreen } from './screens/OverviewScreen';
 import { StageScreen } from './screens/StageScreen';
+import { CourageScreen } from './screens/CourageScreen';
 import { MomentSheet, SourcesSheet, VoiceSheet } from './screens/Sheets';
 
 type Screen =
   | { name: 'focus' }
   | { name: 'session'; steps: Step[]; focus: FocusId[]; minutes: number }
   | { name: 'overview'; mode: 'done' | 'browse'; minutes: number }
-  | { name: 'stage' };
+  | { name: 'stage' }
+  | { name: 'courage' };
 
 type Sheet = 'voice' | 'moment' | 'sources' | null;
 
@@ -71,6 +73,18 @@ export default function App() {
               onStart={startSession}
               onVoice={() => setSheet('voice')}
               onOverview={() => show({ name: 'overview', mode: 'browse', minutes: 0 })}
+              onStage={() => show({ name: 'stage' })}
+              onCourage={() => show({ name: 'courage' })}
+            />
+          )}
+
+          {screen.name === 'courage' && (
+            <CourageScreen
+              key={nonce}
+              progress={progress}
+              update={update}
+              onClose={() => show({ name: 'focus' })}
+              onMoment={() => setSheet('moment')}
               onStage={() => show({ name: 'stage' })}
             />
           )}

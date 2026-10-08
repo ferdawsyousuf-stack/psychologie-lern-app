@@ -428,4 +428,84 @@ export const SOURCE_GROUPS: { title: string; items: SourceItem[] }[] = [
       },
     ],
   },
+{
+    title: 'Mut & Selbstvertrauen',
+    items: [
+      {
+        who: 'Gilovich, Medvec & Savitsky (2000)',
+        what: 'Spotlight-Effekt: Wir überschätzen, wie sehr andere auf unser Aussehen und unsere Fehler achten. Journal of Personality and Social Psychology.',
+        url: 'https://scholar.google.com/scholar?q=Gilovich+Medvec+Savitsky+2000+spotlight+effect+social+judgment',
+      },
+      {
+        who: 'Savitsky & Gilovich (2003)',
+        what: 'Illusion der Durchschaubarkeit: Wer weiß, dass man Nervosität kaum sieht, hält bessere Reden. Journal of Experimental Social Psychology.',
+        url: 'https://scholar.google.com/scholar?q=Savitsky+Gilovich+2003+illusion+of+transparency+alleviation+of+speech+anxiety',
+      },
+      {
+        who: 'Boothby, Cooney, Sandstrom & Clark (2018)',
+        what: 'Sympathie-Lücke: Nach Gesprächen unterschätzen wir, wie sehr uns andere mögen. Psychological Science.',
+        url: 'https://scholar.google.com/scholar?q=Boothby+Cooney+Sandstrom+Clark+2018+liking+gap',
+      },
+      {
+        who: 'Epley & Schroeder (2014)',
+        what: 'Gespräche mit Fremden sind angenehmer, als Menschen erwarten. Journal of Experimental Psychology: General.',
+        url: 'https://scholar.google.com/scholar?q=Epley+Schroeder+2014+mistakenly+seeking+solitude',
+      },
+      {
+        who: 'Huang, Yeomans, Brooks, Minson & Gino (2017)',
+        what: 'Wer mehr Fragen stellt, besonders Nachfragen, wird mehr gemocht. Journal of Personality and Social Psychology.',
+        url: 'https://scholar.google.com/scholar?q=Huang+Yeomans+Brooks+Minson+Gino+2017+it+doesnt+hurt+to+ask',
+      },
+      {
+        who: 'Kross u. a. (2014)',
+        what: 'Selbstgespräch mit eigenem Namen und in der Du-Form senkt Angst vor Reden. Journal of Personality and Social Psychology.',
+        url: 'https://scholar.google.com/scholar?q=Kross+2014+self-talk+as+a+regulatory+mechanism+how+you+do+it+matters',
+      },
+      {
+        who: 'Ramirez & Beilock (2011)',
+        what: 'Sorgen vor einer Prüfung aufschreiben verbessert die Leistung. Science.',
+        url: 'https://scholar.google.com/scholar?q=Ramirez+Beilock+2011+writing+about+testing+worries+boosts+exam+performance',
+      },
+      {
+        who: 'Wells u. a. (1995)',
+        what: 'Wer Sicherheitsverhalten weglässt, verliert mehr Angst als bei Übung mit Krücken. Behavior Therapy.',
+        url: 'https://scholar.google.com/scholar?q=Wells+Clark+Salkovskis+1995+social+phobia+in-situation+safety+behaviors',
+      },
+      {
+        who: 'Masuda, Hayes, Sackett & Twohig (2004)',
+        what: 'Schnelles Wiederholen eines Wortes nimmt negativen Gedanken die Glaubwürdigkeit. Behaviour Research and Therapy.',
+        url: 'https://scholar.google.com/scholar?q=Masuda+Hayes+Sackett+Twohig+2004+cognitive+defusion+word+repetition',
+      },
+      {
+        who: 'Breines & Chen (2012)',
+        what: 'Selbstmitgefühl nach Fehlern steigert die Motivation, sich zu verbessern. Personality and Social Psychology Bulletin.',
+        url: 'https://scholar.google.com/scholar?q=Breines+Chen+2012+self-compassion+increases+self-improvement+motivation',
+      },
+      {
+        who: 'Creswell u. a. (2005)',
+        what: 'Über eigene Werte schreiben dämpft die körperliche Stressreaktion. Psychological Science.',
+        url: 'https://scholar.google.com/scholar?q=Creswell+2005+affirmation+of+personal+values+buffers+neuroendocrine+stress+responses',
+      },
+      {
+        who: 'Cuddy, Schultz & Fosse (2018); Ranehill u. a. (2015)',
+        what: 'Haltung wirkt aufs Gefühl von Stärke, behauptete Hormon-Effekte ließen sich nicht bestätigen.',
+        url: 'https://scholar.google.com/scholar?q=Cuddy+Schultz+Fosse+2018+p-curving+postural+feedback',
+      },
+      {
+        who: 'Bortfeld u. a. (2001)',
+        what: 'Etwa sechs Unebenheiten pro hundert Wörter sind im normalen Gespräch üblich. Language and Speech.',
+        url: 'https://scholar.google.com/scholar?q=Bortfeld+2001+disfluency+rates+in+conversation',
+      },
+      {
+        who: 'Hofmann & Otto (2008); Padesky (1994)',
+        what: 'Gedanken prüfen und ein Positiv-Tagebuch: Bausteine der kognitiven Verhaltenstherapie.',
+        url: 'https://scholar.google.com/scholar?q=Hofmann+Otto+2008+cognitive+behavioral+therapy+for+social+anxiety+disorder',
+      },
+      {
+        who: 'Lara (2010); Ben Simon u. a. (2020)',
+        what: 'Viel Koffein verstärkt Unruhe, Schlafmangel macht deutlich ängstlicher.',
+        url: 'https://scholar.google.com/scholar?q=Ben+Simon+2020+overanxious+and+underslept',
+      },
+    ],
+  },
 ];

@@ -7,7 +7,7 @@ Dieses Repo ist das Backup mit Versionsgeschichte.
 |---|---|---|
 | `gehirnatlas/` | [Gehirnatlas](https://claude.ai/artifact/WQLJBEcPFpwG9hVRvv7UBh) | Hauptapp: Gehirn 2D/3D, Neuron, Synapse, Botenstoffe, Nervensystem, Sehen, Schlaf, Stress, Methoden, Fächer, Karteikarten (FSRS), Fälle, Quiz, Probeprüfung mit Themen-Tests und großer Probeklausur pro Modul, Lernwissenschaft |
 | `studienplaner/` | [Modul 1 · Studienplaner WS 26/27](https://claude.ai/artifact/LxA83W7tpEgN47kd476Xqy) | Checkliste, Kurse, Wochenplan und Fristen für Modul 1 |
-| `sprechwerk/` | [Sprechwerk Daily](https://claude.ai/artifact/PLTMW3jcPoWe6HKS7a9J6p), [als Handy-App](https://ferdawsyousuf-stack.github.io/psychologie-lern-app/sprechwerk/) | Tägliches Sprechtraining: Atem, Aufmerksamkeit, Tempo, Stimme, Mission des Tages, Bühne, automatische Aufnahme |
+| `sprechwerk/` | [Sprechwerk Daily](https://claude.ai/artifact/PLTMW3jcPoWe6HKS7a9J6p), [als Handy-App](https://ferdawsyousuf-stack.github.io/psychologie-lern-app/sprechwerk/) | Tägliches Sprechtraining: Atem, Aufmerksamkeit, Tempo, Stimme, Mission des Tages, Bühne, automatische Aufnahme; Bereich „Mut“ mit Angst-Leiter, Gedanken-Check, 15 Mut-Übungen, Erfolgs-Tagebuch, Gesprächs-Startern und 20 Wissenskarten |
 
 `gehirnatlas/index.html` ist der Seitenquelltext ohne den Dokumentrahmen, den claude.ai beim Veröffentlichen ergänzt.
 `gehirnatlas/lib/` enthält pdf.js für den PDF-Import eigener Karteikarten.

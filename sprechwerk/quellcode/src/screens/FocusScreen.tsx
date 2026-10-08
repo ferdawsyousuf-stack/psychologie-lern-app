@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Drama } from 'lucide-react';
+import { Drama, Flame } from 'lucide-react';
 import { FOCUS_OPTIONS, type FocusId } from '../content';
 import { OptionCard, Pill, VoiceOrb, Waveform, delay, pad2 } from '../components/ui';
 import { SlideToConfirm } from '../components/SlideToConfirm';
@@ -13,6 +13,7 @@ export function FocusScreen({
   onVoice,
   onOverview,
   onStage,
+  onCourage,
 }: {
   initial: FocusId[];
   minutesFor: (focus: FocusId[]) => number;
@@ -20,6 +21,7 @@ export function FocusScreen({
   onVoice: () => void;
   onOverview: () => void;
   onStage: () => void;
+  onCourage: () => void;
 }) {
   const { short } = useLayout();
   const topPad = useTopPad();
@@ -38,13 +40,22 @@ export function FocusScreen({
         <Pill onClick={onOverview} ariaLabel="Sprechwerk Daily: Fortschritt und Moment-Hilfe öffnen">
           Sprechwerk Daily
         </Pill>
-        <Pill
-          icon={<Drama size={12} className="text-white/80" />}
-          onClick={onStage}
-          ariaLabel="Bühne öffnen: Auftritt vor Publikum"
-        >
-          Bühne
-        </Pill>
+        <div className="flex items-center gap-2">
+          <Pill
+            icon={<Flame size={12} className="text-white/80" />}
+            onClick={onCourage}
+            ariaLabel="Mut öffnen: Angst überwinden und Selbstvertrauen aufbauen"
+          >
+            Mut
+          </Pill>
+          <Pill
+            icon={<Drama size={12} className="text-white/80" />}
+            onClick={onStage}
+            ariaLabel="Bühne öffnen: Auftritt vor Publikum"
+          >
+            Bühne
+          </Pill>
+        </div>
       </div>
 
       <div className={`fade-up shrink-0 ${short ? 'mb-6' : 'mb-8'}`} style={delay(0.25)}>

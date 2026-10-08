@@ -2,7 +2,7 @@
 // Die App startet sofort aus dem Speicher (auch ohne Internet) und holt Neuerungen im Hintergrund;
 // sie gelten ab dem nächsten Start. Das Bühnen-Video lädt nur online.
 
-const VERSION = '606e6a234b51';
+const VERSION = '92de35de4473';
 const SHELL = 'sprechwerk-shell-' + VERSION;
 const RUNTIME = 'sprechwerk-runtime-v1';
 const SHELL_FILES = [

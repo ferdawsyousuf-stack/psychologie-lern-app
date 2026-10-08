@@ -206,10 +206,13 @@ export function TimerControl({
   seconds,
   phases,
   counterLabel,
+  cueLabel = 'Nur der Atem',
 }: {
   seconds: number;
   phases?: { at: number; label: string }[];
   counterLabel?: string;
+  /** Hinweis, solange der Timer läuft (ohne Phasen). */
+  cueLabel?: string;
 }) {
   const timer = useTimer(seconds * 1000);
   const { state, sec } = timer;
@@ -254,7 +257,7 @@ export function TimerControl({
           ? 'Tippe zum Starten'
           : state === 'paused'
             ? 'Pausiert'
-            : 'Nur der Atem';
+            : cueLabel;
   const label =
     state === 'idle'
       ? `start · ${fmtTime(seconds)}`
