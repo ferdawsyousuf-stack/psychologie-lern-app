@@ -1,0 +1,39 @@
+{
+  "id": "/psychologie-lern-app/nachtwerk/",
+  "name": "Nachtwerk Schlaf",
+  "short_name": "Nachtwerk",
+  "description": "Dein Schlaf auf dem nächsten Level: Schlafforschung, auf deine Oura-Daten angewandt.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12050a",
+  "theme_color": "#12050a",
+  "categories": [
+    "health",
+    "lifestyle",
+    "medical"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

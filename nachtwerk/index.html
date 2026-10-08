@@ -1,0 +1,1682 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12050a">
+<meta name="description" content="Dein Schlaf auf dem nächsten Level: Schlafforschung, auf deine Oura-Daten angewandt.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nachtwerk">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.ouraring.com https://*.workers.dev; base-uri 'none'; form-action 'none'; object-src 'none'">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script>window.NW_PWA=true</script>
+<title>Nachtwerk Schlaf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+<style>
+/* Layout: Desktop = Hero links, Phone-Frame rechts mit der App. Handy = die App füllt den Bildschirm.
+   Eine Nachtwelt in Weinrot, bewusst nur dunkel. Ab dem Abend legt sich ein warmer Nachtfilter darüber. */
+:root{
+  --night:#12050a;        /* tiefster Grund */
+  --wine:#5e1428;         /* Weinrot */
+  --wine-hi:#8c2440;      /* helles Weinrot */
+  --rose:#f0b3c2;         /* Akzent auf Glas */
+  --gold:#e6c873;         /* Atem-Glühen */
+  --ink:#ffffff;
+  --good:#9fe0b8; --warn:#f5d27a; --bad:#ff9aa8;
+  --font:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--night);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--rose);outline-offset:3px}
+a{color:var(--rose)}
+.num{font-variant-numeric:tabular-nums}
+.ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:inline-block;vertical-align:middle}
+
+/* ---------- Nachthimmel ---------- */
+.sky{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 70% 10%,#3a0c1c 0%,var(--night) 60%)}
+.sky .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.75;animation:drift 26s ease-in-out infinite alternate}
+.sky .b1{width:70%;height:55%;left:-15%;top:-10%;background:radial-gradient(circle,#9b2a4a 0%,transparent 70%)}
+.sky .b2{width:65%;height:60%;right:-20%;top:25%;background:radial-gradient(circle,#6a1830 0%,transparent 70%);animation-duration:32s}
+.sky .b3{width:80%;height:50%;left:10%;bottom:-25%;background:radial-gradient(circle,#c0506e 0%,transparent 65%);opacity:.45;animation-duration:38s}
+.sky canvas{position:absolute;inset:0;width:100%;height:100%}
+.sky .veil{position:absolute;inset:0;background:rgba(94,20,40,.3)}
+@keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(6%,4%,0) scale(1.12)}}
+.page-sky{position:fixed;inset:0;z-index:0}
+
+/* ---------- Liquid Glass ---------- */
+.liquid-glass{background:rgba(255,255,255,.01);background-blend-mode:luminosity;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:none;box-shadow:inset 0 1px 1px rgba(255,255,255,.1);position:relative;overflow:hidden}
+.liquid-glass::before,.liquid-glass-selected::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.4px;background:linear-gradient(180deg,rgba(255,255,255,.45) 0%,rgba(255,255,255,.15) 20%,rgba(255,255,255,0) 40%,rgba(255,255,255,0) 60%,rgba(255,255,255,.15) 80%,rgba(255,255,255,.45) 100%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.liquid-glass-selected{background:rgba(255,255,255,.12);background-blend-mode:luminosity;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 1px 2px rgba(255,255,255,.2);position:relative;overflow:hidden}
+.liquid-glass-selected::before{background:linear-gradient(180deg,rgba(255,255,255,.6) 0%,rgba(255,255,255,.25) 20%,rgba(255,255,255,0) 40%,rgba(255,255,255,0) 60%,rgba(255,255,255,.25) 80%,rgba(255,255,255,.6) 100%)}
+
+/* ---------- Seite ---------- */
+.stage{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
+.topnav{display:none}
+.hero{display:none}
+.wrap{flex:1;display:flex;min-height:0}
+
+/* ---------- Gerät / App ---------- */
+.device{position:relative;width:100%;height:100%;overflow:hidden;isolation:isolate}
+.device>.sky{z-index:0}
+.island{display:none}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;z-index:2;padding:calc(env(safe-area-inset-top,0px) + 20px) 20px calc(env(safe-area-inset-bottom,0px) + 120px);scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.screen::-webkit-scrollbar{display:none}
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:10px}
+.logo{width:30px;height:30px;fill:#fff;flex:none}
+.circle-btn{width:40px;height:40px;border-radius:999px;display:grid;place-items:center;position:relative;flex:none}
+.circle-btn .ic{width:20px;height:20px;color:rgba(255,255,255,.85)}
+
+.badge{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:8px 14px 8px 8px;font-size:12px;font-weight:400;color:rgba(255,255,255,.85)}
+.badge .dots{display:flex}
+.badge .dots span{width:22px;height:22px;border-radius:999px;display:grid;place-items:center;border:2px solid rgba(255,255,255,.2);background:linear-gradient(160deg,var(--wine-hi),var(--wine));margin-left:-7px}
+.badge .dots span:first-child{margin-left:0}
+.badge .dots .ic{width:11px;height:11px;stroke-width:2;color:#fff}
+.pulse{width:7px;height:7px;border-radius:99px;background:var(--warn);flex:none;animation:ping 2.4s infinite}
+.pulse.live{background:var(--good)}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,255,255,.35)}70%{box-shadow:0 0 0 8px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+
+.eyebrow{font-size:13px;color:rgba(255,255,255,.6);font-weight:400;margin:0 0 6px}
+h1.title{font-size:30px;line-height:1.08;font-weight:400;letter-spacing:-.04em;margin:0;text-wrap:balance}
+h1.title em{font-style:normal;color:var(--rose)}
+h2.sec{font-size:12px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.55);margin:30px 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+h2.sec small{font-size:11px;letter-spacing:.02em;text-transform:none;color:rgba(255,255,255,.45);font-weight:400}
+p.lead{font-size:14px;font-weight:300;line-height:1.55;color:rgba(255,255,255,.75);margin:10px 0 0}
+
+.card{border-radius:28px;padding:18px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat .k{font-size:11px;font-weight:500;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase}
+.stat .v{font-size:24px;font-weight:400;letter-spacing:-.03em;margin-top:8px}
+.stat .v small{font-size:13px;color:rgba(255,255,255,.55);font-weight:300;margin-left:2px}
+.stat .d{font-size:12px;font-weight:300;color:rgba(255,255,255,.6);margin-top:4px}
+
+/* Score-Ring */
+.ringbox{display:flex;align-items:center;gap:20px;margin-top:22px}
+.ring{position:relative;width:150px;height:150px;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .big{font-size:48px;font-weight:300;letter-spacing:-.05em;line-height:1}
+.ring .lbl{font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;line-height:1.35}
+.ring-arc{transition:stroke-dashoffset 1.6s cubic-bezier(.22,1,.36,1)}
+.ringside{min-width:0;display:flex;flex-direction:column;gap:10px}
+.mini{display:flex;flex-direction:column}
+.mini b{font-size:18px;font-weight:400;letter-spacing:-.02em}
+.mini span{font-size:11px;color:rgba(255,255,255,.55)}
+
+/* Fortschritt */
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.row b{font-size:15px;font-weight:500}
+.row span{font-size:12px;color:rgba(255,255,255,.6);text-align:right}
+.track{height:8px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;position:relative;overflow:hidden}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--wine-hi),var(--rose));transition:width 1.4s cubic-bezier(.22,1,.36,1)}
+.track.warn i{background:linear-gradient(90deg,#9c5a2a,var(--warn))}
+.track.bad i{background:linear-gradient(90deg,#8c2440,var(--bad))}
+.ticks{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.45);margin-top:6px}
+
+.lever{display:flex;gap:14px;align-items:flex-start}
+.lever .icw{width:38px;height:38px;border-radius:999px;display:grid;place-items:center;flex:none;background:rgba(240,179,194,.14)}
+.lever .icw .ic{color:var(--rose)}
+.lever h3{margin:0;font-size:15px;font-weight:500;letter-spacing:-.01em}
+.lever p{margin:4px 0 0;font-size:13px;font-weight:300;line-height:1.5;color:rgba(255,255,255,.72)}
+
+.cta{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:13px 22px;font-size:14px;font-weight:500;transition:background .3s}
+.cta:hover{background:rgba(255,255,255,.1)}
+.cta.solid{background:#fff;color:#2b1a1f}
+.cta.solid:hover{background:#ffe9ee}
+.cta .ic{width:16px;height:16px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.link{color:var(--rose);font-size:12.5px;text-decoration:underline;text-underline-offset:3px}
+
+/* Charts */
+.chart{width:100%;height:auto;display:block;margin-top:8px}
+.chart text{fill:rgba(255,255,255,.5);font-size:9px;font-family:var(--font)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:rgba(255,255,255,.65);margin-top:10px}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:0}
+.cardhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.cardhead h3{margin:0;font-size:15px;font-weight:500}
+.cardhead span{font-size:12px;color:rgba(255,255,255,.55);text-align:right}
+.note{font-size:12.5px;font-weight:300;line-height:1.5;color:rgba(255,255,255,.7);margin:10px 0 0}
+.tiny{font-size:11px;color:rgba(255,255,255,.45);line-height:1.45;margin-top:8px}
+
+/* Faktoren */
+.factors{display:flex;flex-direction:column;gap:10px}
+.factor{border-radius:24px;padding:16px 18px;text-align:left;width:100%}
+.factor .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.factor .name{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;min-width:0}
+.factor .name .ic{width:17px;height:17px;color:rgba(255,255,255,.75)}
+.chip{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:4px 9px;border-radius:99px;flex:none}
+.chip.good{color:var(--good);background:rgba(159,224,184,.12)}
+.chip.ok{color:var(--warn);background:rgba(245,210,122,.12)}
+.chip.bad{color:var(--bad);background:rgba(255,154,168,.13)}
+.chip.info{color:rgba(255,255,255,.7);background:rgba(255,255,255,.08)}
+.factor .val{font-size:22px;font-weight:400;letter-spacing:-.03em;margin-top:10px}
+.factor .val small{font-size:12px;font-weight:300;color:rgba(255,255,255,.55);margin-left:6px;letter-spacing:0}
+.factor .why{font-size:12.5px;font-weight:300;line-height:1.5;color:rgba(255,255,255,.7);margin-top:6px}
+.factor .do{font-size:12.5px;line-height:1.5;color:var(--rose);margin-top:8px;font-weight:400}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filters button,.pillbtn{border-radius:99px;padding:8px 14px;font-size:12px;font-weight:500;color:rgba(255,255,255,.85)}
+
+/* Wissen */
+details.know{border-radius:22px;padding:0}
+details.know summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;gap:12px;align-items:center;font-size:14px;font-weight:500}
+details.know summary::-webkit-details-marker{display:none}
+details.know summary .ic{color:var(--rose)}
+details.know summary .chev{margin-left:auto;transition:transform .3s;color:rgba(255,255,255,.5)}
+details.know[open] summary .chev{transform:rotate(180deg)}
+details.know .kb{padding:0 18px 16px 48px;font-size:13px;font-weight:300;line-height:1.55;color:rgba(255,255,255,.78)}
+details.know .kb p{margin:0 0 8px}
+details.know .src{font-size:11px;color:rgba(255,255,255,.45)}
+
+/* Abend / Plan */
+.goals{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.goal{border-radius:32px;height:100px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;transition:transform .2s}
+.goal:active{transform:scale(.97)}
+.goal .n{font-size:11px;font-weight:500;color:rgba(255,255,255,.5)}
+.goal .t{font-size:15px;font-weight:500;line-height:1.2}
+.timeline{display:flex;flex-direction:column;margin-top:4px}
+.tl{display:grid;grid-template-columns:52px 18px 1fr;gap:10px;align-items:start;text-align:left;width:100%}
+.tl .time{font-size:13px;font-weight:500;padding-top:14px;color:rgba(255,255,255,.85)}
+.tl .rail{position:relative;height:100%;min-height:62px}
+.tl .rail:before{content:"";position:absolute;left:8px;top:0;bottom:0;width:1px;background:rgba(255,255,255,.15)}
+.tl .rail i{position:absolute;left:2px;top:16px;width:13px;height:13px;border-radius:99px;border:1.5px solid rgba(255,255,255,.5);background:var(--night);transition:all .3s}
+.tl.now .rail i{border-color:var(--gold);box-shadow:0 0 10px rgba(230,200,115,.6)}
+.tl.done .rail i{background:var(--rose);border-color:var(--rose);box-shadow:0 0 12px rgba(240,179,194,.7)}
+.tl .body{padding:12px 0}
+.tl .body b{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}
+.tl .body b .ic{width:15px;height:15px;color:rgba(255,255,255,.6)}
+.tl .body span{font-size:12.5px;font-weight:300;color:rgba(255,255,255,.65);line-height:1.45;display:block;margin-top:2px}
+.tl.done .body b{color:rgba(255,255,255,.55);text-decoration:line-through;text-decoration-color:rgba(240,179,194,.6)}
+.tune{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tune .ctrl{display:flex;align-items:center;gap:10px}
+.tune .ctrl b{font-size:26px;font-weight:300;letter-spacing:-.03em;min-width:78px;text-align:center}
+.tune .ctrl button{width:38px;height:38px;border-radius:99px;display:grid;place-items:center}
+.tune .ctrl .ic{width:16px;height:16px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tool{border-radius:26px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:10px;min-height:118px}
+.tool .ic{width:22px;height:22px;color:var(--rose)}
+.tool b{font-size:14px;font-weight:500;line-height:1.25}
+.tool span{font-size:11.5px;font-weight:300;color:rgba(255,255,255,.6);line-height:1.4}
+.tool.wide{grid-column:1/-1;flex-direction:row;align-items:center;min-height:0}
+.tool.wide>div{display:flex;flex-direction:column;gap:3px}
+
+.voice{display:flex;flex-direction:column;align-items:center;margin:22px 0}
+.voice .glow{position:relative;width:150px;height:110px;display:grid;place-items:center}
+.voice .glow:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(230,200,115,.5) 0%,rgba(180,140,60,.2) 40%,transparent 70%);animation:breathe 6s ease-in-out infinite}
+.voice button{width:64px;height:64px;border-radius:99px;display:grid;place-items:center}
+.voice .lab{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}
+@keyframes breathe{0%,100%{transform:scale(.85);opacity:.7}50%{transform:scale(1.1);opacity:1}}
+
+.slider{position:relative;height:56px;border-radius:999px;margin-top:8px;user-select:none;-webkit-user-select:none;touch-action:none}
+.slider .thumb{position:absolute;left:6px;top:6px;width:44px;height:44px;border-radius:99px;background:#fff;display:grid;place-items:center;z-index:2;cursor:grab;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.slider .thumb .ic{color:#2b1a1f}
+.slider .label{position:absolute;inset:0;display:grid;place-items:center;font-size:14px;font-weight:500;color:rgba(255,255,255,.6);pointer-events:none;padding-left:40px}
+.slider .chev{position:absolute;right:18px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none}
+.slider .chev .ic{width:14px;height:14px}
+.slider.done .label{color:var(--rose)}
+
+/* Check-in */
+.rate{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.rate button{border-radius:18px;padding:12px 0 10px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10.5px;color:rgba(255,255,255,.7)}
+.rate button b{font-size:18px;font-weight:400;color:#fff}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tags button{border-radius:99px;padding:8px 12px;font-size:12px;display:inline-flex;gap:6px;align-items:center;color:rgba(255,255,255,.85)}
+.tags button .ic{width:14px;height:14px}
+
+/* Formulare */
+.glass-input{display:block;width:100%;resize:vertical;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(255,255,255,.07);padding:12px 14px;color:#fff;font:inherit;font-size:15px;line-height:1.45;outline:none}
+.glass-input::placeholder{color:rgba(255,255,255,.4)}
+.glass-input:focus{border-color:rgba(255,255,255,.5)}
+label.fl{display:block;font-size:12px;color:rgba(255,255,255,.6);margin:14px 0 6px}
+.seg{display:flex;border-radius:99px;padding:4px;gap:4px}
+.seg button{flex:1;border-radius:99px;padding:9px 0;font-size:12.5px;font-weight:500;color:rgba(255,255,255,.7)}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.14);color:#fff}
+
+/* Tabbar */
+.tabbar{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:5;border-radius:999px;display:grid;grid-template-columns:repeat(5,1fr);padding:6px;background:rgba(18,5,10,.38)}
+.tabbar button{border-radius:999px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:10px;font-weight:500;color:rgba(255,255,255,.55);transition:color .3s,background .3s}
+.tabbar button .ic{width:19px;height:19px}
+.tabbar button[aria-current="page"]{color:#fff;background:rgba(255,255,255,.12)}
+
+/* Overlays */
+.ov{position:absolute;inset:0;z-index:8;background:rgba(10,3,6,.86);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);opacity:0;pointer-events:none;transition:opacity .4s;display:flex;flex-direction:column}
+.ov.open{opacity:1;pointer-events:auto}
+.ov .ovhead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 20px) 20px 8px}
+.ov .ovhead h2{margin:0;font-size:17px;font-weight:500;letter-spacing:-.01em}
+.ov .ovbody{flex:1;overflow-y:auto;padding:8px 20px calc(env(safe-area-inset-bottom,0px) + 28px);scrollbar-width:none}
+.ov .ovbody::-webkit-scrollbar{display:none}
+.ov .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:20px}
+.orb{width:180px;height:180px;border-radius:999px;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.35),rgba(230,200,115,.25) 35%,rgba(140,36,64,.4) 70%);box-shadow:0 0 80px rgba(230,200,115,.35);transform:scale(.6);transition-property:transform;transition-timing-function:ease-in-out}
+.phase{font-size:24px;font-weight:300;letter-spacing:-.02em}
+.count{font-size:13px;color:rgba(255,255,255,.6)}
+.bigword{font-size:40px;font-weight:300;letter-spacing:-.03em;transition:opacity 1.2s}
+.wake-ov{background:#000}
+.wake-ov .center{color:#7a2a2a}
+.wake-ov .center p{max-width:300px;font-size:15px;line-height:1.6;margin:0}
+.wake-ov .circle-btn .ic{color:#7a2a2a}
+.wake-ov .pillbtn{color:#a33a3a;border:1px solid #3a1010}
+.menu-links{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:6px 0 4px}
+.menu-links button{border-radius:20px;padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.8)}
+.set{border-radius:24px;padding:16px 18px;margin-top:12px}
+.set h3{margin:0 0 4px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}
+.set h3 .ic{width:16px;height:16px;color:var(--rose)}
+.set p{margin:4px 0 0;font-size:12.5px;font-weight:300;line-height:1.5;color:rgba(255,255,255,.7)}
+.set ol{margin:8px 0 0;padding-left:18px;font-size:12.5px;font-weight:300;line-height:1.55;color:rgba(255,255,255,.75)}
+.set code{font-size:11.5px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:6px;word-break:break-all}
+
+/* Hinweise */
+.srcbar{display:flex;align-items:center;gap:8px;font-size:11.5px;color:rgba(255,255,255,.6);margin-top:14px;flex-wrap:wrap}
+.srcbar>span:nth-child(2){flex:1;min-width:0}
+.srcbar button{text-decoration:underline;text-underline-offset:3px;color:var(--rose);font-size:11.5px}
+.toast{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);transform:translate(-50%,20px);z-index:20;border-radius:99px;padding:11px 18px;font-size:13px;background:rgba(30,10,16,.92);box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.15);opacity:0;transition:all .35s cubic-bezier(.22,1,.36,1);pointer-events:none;white-space:nowrap;max-width:90%}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.install{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-end;padding:12px 12px calc(env(safe-area-inset-bottom,0px) + 16px);background:rgba(0,0,0,.3)}
+.install .ic-card{width:100%;border-radius:32px;padding:20px;background:rgba(40,12,20,.86);-webkit-backdrop-filter:blur(24px) saturate(1.2);backdrop-filter:blur(24px) saturate(1.2);box-shadow:inset 0 1px 1px rgba(255,255,255,.14),0 18px 50px rgba(0,0,0,.35);animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both}
+.install .head{display:flex;gap:14px;align-items:center}
+.install img{width:56px;height:56px;border-radius:14px;flex:none}
+.install .step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:99px;background:rgba(255,255,255,.14);font-size:12px;font-weight:500;flex:none}
+.install li{display:flex;gap:12px;align-items:center;font-size:14px;line-height:1.4;margin-top:10px;color:rgba(255,255,255,.9)}
+.install ol{list-style:none;padding:0;margin:14px 0 0}
+
+/* Nachtfilter: warmes, gedimmtes Licht am Abend */
+#nightTint{position:fixed;inset:0;z-index:9999;pointer-events:none;background:#c86e3c;mix-blend-mode:multiply;opacity:0;transition:opacity 1.2s}
+html.night #nightTint{opacity:.42}
+html.night .sky canvas{opacity:.5}
+
+/* Einblenden */
+.fu{animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both}
+.calm .fu{animation:none}
+.calm .ring-arc,.calm .track i{transition:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ---------- Desktop ---------- */
+@media (min-width:960px){
+  .topnav{display:flex;justify-content:space-between;align-items:center;padding:32px clamp(32px,5vw,80px) 0}
+  .topnav .logo{width:36px;height:36px}
+  .pill{border-radius:999px;padding:12px 30px;display:flex;gap:26px}
+  .pill button{font-size:14px;font-weight:500;color:rgba(255,255,255,.7);transition:color .2s}
+  .pill button:hover,.pill button[aria-current="page"]{color:#fff}
+  .wrap{padding:0 clamp(32px,5vw,80px) 32px;gap:clamp(32px,5vw,90px);align-items:center;justify-content:space-between}
+  .hero{display:flex;flex-direction:column;justify-content:space-between;align-self:stretch;max-width:640px;padding-top:6vh;padding-bottom:2vh;min-width:0}
+  .hero h1{font-size:clamp(52px,5.6vw,84px);font-weight:400;line-height:1.05;letter-spacing:-.05em;margin:0;text-wrap:balance}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,#fff,var(--rose));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{font-size:18px;font-weight:300;color:rgba(255,255,255,.7);margin:20px 0 0;max-width:46ch;line-height:1.5}
+  .hero .cta{margin-top:32px;padding:14px 28px}
+  .hero .badge{margin-bottom:24px;font-size:14px;padding:9px 16px 9px 9px}
+  .hstats{display:flex;align-items:flex-end;gap:64px;margin-top:40px}
+  .hstat .v{font-size:30px;font-weight:400;letter-spacing:-.03em;margin-top:12px}
+  .hstat .l{font-size:14px;font-weight:300;color:rgba(255,255,255,.6);margin-top:4px}
+  .tri{position:relative;width:20px;height:20px}
+  .tri i{position:absolute;width:2.5px;height:2.5px;background:rgba(255,255,255,.6)}
+  .checker{display:grid;grid-template-columns:repeat(3,4px);gap:2px}
+  .checker i{width:4px;height:4px;border-radius:1px}
+  .device{flex:none;width:375px;height:min(780px,calc(100% - 8px));border-radius:52px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.6),0 0 0 10px #1a0d11,0 0 0 11px rgba(255,255,255,.06),0 0 80px rgba(140,36,64,.45),0 30px 80px rgba(0,0,0,.6);overflow:hidden}
+  .island{display:block;position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:32px;border-radius:99px;background:#000;z-index:50}
+  .screen{padding-top:56px}
+  .ov .ovhead{padding-top:56px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation:none!important;transition:none!important}
+}
+</style>
+
+</head>
+<body>
+<div class="page-sky sky" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><canvas id="stars"></canvas></div>
+
+<div class="stage">
+  <nav class="topnav" aria-label="Hauptnavigation">
+    <svg class="logo" viewBox="0 0 256 256" aria-label="Nachtwerk"><path d="M 128 128 C 198.692 128 256 185.308 256 256 L 151.883 256 C 149.812 220.307 120.213 192 84 192 C 47.787 192 18.188 220.307 16.117 256 L 0 256 C 0 185.308 57.308 128 128 128 Z M 104.117 0 C 106.188 35.694 135.787 64 172 64 C 208.213 64 237.812 35.694 239.883 0 L 256 0 C 256 70.692 198.692 128 128 128 C 57.308 128 0 70.692 0 0 Z"/></svg>
+    <div class="pill liquid-glass" id="deskTabs"></div>
+    <button class="circle-btn liquid-glass" data-open="settings" aria-label="Einstellungen"><span data-ic="circle-user-round"></span></button>
+  </nav>
+
+  <div class="wrap">
+    <section class="hero" aria-label="Überblick">
+      <div>
+        <div class="badge liquid-glass fu" style="animation-delay:.1s">
+          <div class="dots"><span data-ic="moon"></span><span data-ic="heart-pulse"></span><span data-ic="footprints"></span><span data-ic="thermometer"></span></div>
+          Alle deine Oura-Daten, ein Ziel: besser schlafen
+        </div>
+        <h1 class="fu" style="animation-delay:.25s">Dein Schlaf auf der<br><em>nächsten Stufe</em></h1>
+        <p class="fu" style="animation-delay:.4s">Schlafforschung, auf deine Nächte angewandt. Ein klarer Plan für jeden Abend.</p>
+        <button class="cta liquid-glass fu" style="animation-delay:.55s" data-tab="abend">Plan für heute Abend <span data-ic="arrow-right"></span></button>
+      </div>
+      <div class="hstats fu" style="animation-delay:.7s">
+        <div class="hstat">
+          <div class="tri"><i style="left:8.75px;top:0"></i><i style="left:5.5px;top:5.5px"></i><i style="left:12px;top:5.5px"></i><i style="left:2.25px;top:11px"></i><i style="left:8.75px;top:11px"></i><i style="left:15.25px;top:11px"></i><i style="left:0;top:16.5px"></i><i style="left:6px;top:16.5px"></i><i style="left:12px;top:16.5px"></i></div>
+          <div class="v num" id="hsDur">–</div><div class="l">Ø Schlaf pro Nacht</div>
+        </div>
+        <div class="hstat">
+          <div class="checker"><i style="background:rgba(255,255,255,.6)"></i><i></i><i style="background:rgba(255,255,255,.6)"></i><i></i><i style="background:rgba(255,255,255,.6)"></i><i></i><i style="background:rgba(255,255,255,.6)"></i><i></i><i style="background:rgba(255,255,255,.6)"></i></div>
+          <div class="v num" id="hsLvl">–</div><div class="l">Dein Weg zur nächsten Stufe</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="device" id="device">
+      <div class="sky" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="veil"></div></div>
+      <div class="island" aria-hidden="true"></div>
+      <main class="screen" id="screen"></main>
+      <nav class="tabbar liquid-glass" id="tabbar" aria-label="App-Navigation"></nav>
+      <div class="ov" id="ov" role="dialog" aria-modal="true" aria-hidden="true"></div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      <div id="installHost"></div>
+    </div>
+  </div>
+</div>
+<div id="nightTint" aria-hidden="true"></div>
+
+<script>
+const ICONS={"moon-star":"<path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9\"/><path d=\"M20 3v4\"/><path d=\"M22 5h-4\"/>","chart-no-axes-column":"<line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"4\"/><line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"14\"/>","layers":"<path d=\"M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z\"/><path d=\"M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12\"/><path d=\"M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17\"/>","sparkles":"<path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\"/><path d=\"M20 3v4\"/><path d=\"M22 5h-4\"/><path d=\"M4 17v2\"/><path d=\"M5 18H3\"/>","sun-moon":"<path d=\"M12 8a2.83 2.83 0 0 0 4 4 4 4 0 1 1-4-4\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"m4.9 4.9 1.4 1.4\"/><path d=\"m17.7 17.7 1.4 1.4\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/><path d=\"m6.3 17.7-1.4 1.4\"/><path d=\"m19.1 4.9-1.4 1.4\"/>","moon":"<path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\"/>","sun":"<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"m4.93 4.93 1.41 1.41\"/><path d=\"m17.66 17.66 1.41 1.41\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/><path d=\"m6.34 17.66-1.41 1.41\"/><path d=\"m19.07 4.93-1.41 1.41\"/>","heart-pulse":"<path d=\"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z\"/><path d=\"M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27\"/>","footprints":"<path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"/><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"/><path d=\"M16 17h4\"/><path d=\"M4 13h4\"/>","thermometer":"<path d=\"M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z\"/>","timer":"<line x1=\"10\" x2=\"14\" y1=\"2\" y2=\"2\"/><line x1=\"12\" x2=\"15\" y1=\"14\" y2=\"11\"/><circle cx=\"12\" cy=\"14\" r=\"8\"/>","circle-user-round":"<path d=\"M18 20a6 6 0 0 0-12 0\"/><circle cx=\"12\" cy=\"10\" r=\"4\"/><circle cx=\"12\" cy=\"12\" r=\"10\"/>","menu":"<line x1=\"4\" x2=\"20\" y1=\"12\" y2=\"12\"/><line x1=\"4\" x2=\"20\" y1=\"6\" y2=\"6\"/><line x1=\"4\" x2=\"20\" y1=\"18\" y2=\"18\"/>","x":"<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>","arrow-right":"<path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/>","clock-3":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"12 6 12 12 16.5 12\"/>","scale":"<path d=\"m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z\"/><path d=\"m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z\"/><path d=\"M7 21h10\"/><path d=\"M12 3v18\"/><path d=\"M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2\"/>","calendar-clock":"<path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\"/><path d=\"M16 2v4\"/><path d=\"M8 2v4\"/><path d=\"M3 10h5\"/><path d=\"M17.5 17.5 16 16.3V14\"/><circle cx=\"16\" cy=\"16\" r=\"6\"/>","sofa":"<path d=\"M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3\"/><path d=\"M2 16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z\"/><path d=\"M4 18v2\"/><path d=\"M20 18v2\"/><path d=\"M12 4v9\"/>","eye":"<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","gauge":"<path d=\"m12 14 4-4\"/><path d=\"M3.34 19a10 10 0 1 1 17.32 0\"/>","waves":"<path d=\"M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\"/><path d=\"M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\"/><path d=\"M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\"/>","brain":"<path d=\"M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z\"/><path d=\"M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z\"/><path d=\"M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4\"/><path d=\"M17.599 6.5a3 3 0 0 0 .399-1.375\"/><path d=\"M6.003 5.125A3 3 0 0 0 6.401 6.5\"/><path d=\"M3.477 10.896a4 4 0 0 1 .585-.396\"/><path d=\"M19.938 10.5a4 4 0 0 1 .585.396\"/><path d=\"M6 18a4 4 0 0 1-1.967-.516\"/><path d=\"M19.967 17.484A4 4 0 0 1 18 18\"/>","activity":"<path d=\"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2\"/>","minus":"<path d=\"M5 12h14\"/>","plus":"<path d=\"M5 12h14\"/><path d=\"M12 5v14\"/>","check":"<path d=\"M20 6 9 17l-5-5\"/>","chevron-right":"<path d=\"m9 18 6-6-6-6\"/>","chevron-down":"<path d=\"m6 9 6 6 6-6\"/>","coffee":"<path d=\"M10 2v2\"/><path d=\"M14 2v2\"/><path d=\"M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1\"/><path d=\"M6 2v2\"/>","wine":"<path d=\"M8 22h8\"/><path d=\"M7 10h10\"/><path d=\"M12 15v7\"/><path d=\"M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z\"/>","utensils":"<path d=\"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2\"/><path d=\"M7 2v20\"/><path d=\"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7\"/>","dumbbell":"<path d=\"M14.4 14.4 9.6 9.6\"/><path d=\"M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z\"/><path d=\"m21.5 21.5-1.4-1.4\"/><path d=\"M3.9 3.9 2.5 2.5\"/><path d=\"M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z\"/>","smartphone":"<rect width=\"14\" height=\"20\" x=\"5\" y=\"2\" rx=\"2\" ry=\"2\"/><path d=\"M12 18h.01\"/>","cloud-moon":"<path d=\"M10.188 8.5A6 6 0 0 1 16 4a1 1 0 0 0 6 6 6 6 0 0 1-3 5.197\"/><path d=\"M13 16a3 3 0 1 1 0 6H7a5 5 0 1 1 4.9-6Z\"/>","bed":"<path d=\"M2 4v16\"/><path d=\"M2 8h18a2 2 0 0 1 2 2v10\"/><path d=\"M2 17h20\"/><path d=\"M6 8v9\"/>","alarm-clock":"<circle cx=\"12\" cy=\"13\" r=\"8\"/><path d=\"M12 9v4l2 2\"/><path d=\"M5 3 2 6\"/><path d=\"m22 6-3-3\"/><path d=\"M6.38 18.7 4 21\"/><path d=\"M17.64 18.67 20 21\"/>","notebook-pen":"<path d=\"M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4\"/><path d=\"M2 6h4\"/><path d=\"M2 10h4\"/><path d=\"M2 14h4\"/><path d=\"M2 18h4\"/><path d=\"M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z\"/>","wind":"<path d=\"M12.8 19.6A2 2 0 1 0 14 16H2\"/><path d=\"M17.5 8a2.5 2.5 0 1 1 2 4H2\"/><path d=\"M9.8 4.4A2 2 0 1 1 11 8H2\"/>","shuffle":"<path d=\"m18 14 4 4-4 4\"/><path d=\"m18 2 4 4-4 4\"/><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"/><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"/><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"/>","flask-conical":"<path d=\"M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2\"/><path d=\"M6.453 15h11.094\"/><path d=\"M8.5 2h7\"/>","refresh-cw":"<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\"/><path d=\"M21 3v5h-5\"/><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\"/><path d=\"M8 16H3v5\"/>","link":"<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/>","clipboard":"<rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"/><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"/>","copy":"<rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\"/><path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\"/>","settings":"<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","info":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/>","triangle-alert":"<path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/>","sunrise":"<path d=\"M12 2v8\"/><path d=\"m4.93 10.93 1.41 1.41\"/><path d=\"M2 18h2\"/><path d=\"M20 18h2\"/><path d=\"m19.07 10.93-1.41 1.41\"/><path d=\"M22 22H2\"/><path d=\"m8 6 4-4 4 4\"/><path d=\"M16 18a4 4 0 0 0-8 0\"/>","sunset":"<path d=\"M12 10V2\"/><path d=\"m4.93 10.93 1.41 1.41\"/><path d=\"M2 18h2\"/><path d=\"M20 18h2\"/><path d=\"m19.07 10.93-1.41 1.41\"/><path d=\"M22 22H2\"/><path d=\"m16 6-4 4-4-4\"/><path d=\"M16 18a4 4 0 0 0-8 0\"/>","lamp":"<path d=\"M8 2h8l4 10H4L8 2Z\"/><path d=\"M12 12v6\"/><path d=\"M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z\"/>","bath":"<path d=\"M10 4 8 6\"/><path d=\"M17 19v2\"/><path d=\"M2 12h20\"/><path d=\"M7 19v2\"/><path d=\"M9 5 7.621 3.621A2.121 2.121 0 0 0 4 5v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5\"/>","lightbulb":"<path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"/><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/>","zap":"<path d=\"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z\"/>","flame":"<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/>","target":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><circle cx=\"12\" cy=\"12\" r=\"6\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/>","book-open":"<path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/>","download":"<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"/>","upload":"<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"17 8 12 3 7 8\"/><line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\"/>","share":"<path d=\"M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8\"/><polyline points=\"16 6 12 2 8 6\"/><line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"15\"/>","square-plus":"<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/><path d=\"M8 12h8\"/><path d=\"M12 8v8\"/>","droplets":"<path d=\"M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z\"/><path d=\"M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97\"/>","snowflake":"<path d=\"m10 20-1.25-2.5L6 18\"/><path d=\"M10 4 8.75 6.5 6 6\"/><path d=\"m14 20 1.25-2.5L18 18\"/><path d=\"m14 4 1.25 2.5L18 6\"/><path d=\"m17 21-3-6h-4\"/><path d=\"m17 3-3 6 1.5 3\"/><path d=\"M2 12h6.5L10 9\"/><path d=\"m20 10-1.5 2 1.5 2\"/><path d=\"M22 12h-6.5L14 15\"/><path d=\"m4 10 1.5 2L4 14\"/><path d=\"m7 21 3-6-1.5-3\"/><path d=\"m7 3 3 6h4\"/>","hourglass":"<path d=\"M5 22h14\"/><path d=\"M5 2h14\"/><path d=\"M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22\"/><path d=\"M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2\"/>","trending-up":"<polyline points=\"22 7 13.5 15.5 8.5 10.5 2 17\"/><polyline points=\"16 7 22 7 22 13\"/>","trending-down":"<polyline points=\"22 17 13.5 8.5 8.5 13.5 2 7\"/><polyline points=\"16 17 22 17 22 11\"/>","external-link":"<path d=\"M15 3h6v6\"/><path d=\"M10 14 21 3\"/><path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\"/>","lock":"<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/>","person-standing":"<circle cx=\"12\" cy=\"5\" r=\"1\"/><path d=\"m9 20 3-6 3 6\"/><path d=\"m6 8 6 2 6-2\"/><path d=\"M12 10v4\"/>","orbit":"<circle cx=\"12\" cy=\"12\" r=\"3\"/><circle cx=\"19\" cy=\"5\" r=\"2\"/><circle cx=\"5\" cy=\"19\" r=\"2\"/><path d=\"M10.4 21.9a10 10 0 0 0 9.941-15.416\"/><path d=\"M13.5 2.1a10 10 0 0 0-9.841 15.416\"/>","battery-low":"<rect width=\"16\" height=\"10\" x=\"2\" y=\"7\" rx=\"2\" ry=\"2\"/><line x1=\"22\" x2=\"22\" y1=\"11\" y2=\"13\"/><line x1=\"6\" x2=\"6\" y1=\"11\" y2=\"13\"/>","bell":"<path d=\"M10.268 21a2 2 0 0 0 3.464 0\"/><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"/>","alarm-clock-check":"<circle cx=\"12\" cy=\"13\" r=\"8\"/><path d=\"M5 3 2 6\"/><path d=\"m22 6-3-3\"/><path d=\"M6.38 18.7 4 21\"/><path d=\"M17.64 18.67 20 21\"/><path d=\"m9 13 2 2 4-4\"/>"};
+/* ===== Datenstand ===== */
+const SNAP = /*SNAP*/null/*END*/;
+const PWA_URL = "https://ferdawsyousuf-stack.github.io/psychologie-lern-app/nachtwerk/";
+const IN_CLAUDE = !!(window.claude && typeof window.claude.use === "function");
+const IS_PWA = !!window.NW_PWA;
+
+/* ===== Hilfen ===== */
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const ic=(n,cls="")=>`<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||""}</svg>`;
+const avg=a=>{const b=a.filter(x=>x!=null&&!isNaN(x));return b.length?b.reduce((s,x)=>s+x,0)/b.length:null};
+const sd=a=>{const b=a.filter(x=>x!=null&&!isNaN(x));if(b.length<2)return 0;const m=avg(b);return Math.sqrt(avg(b.map(x=>(x-m)**2)))};
+const pad=n=>String(n).padStart(2,"0");
+const hm=min=>{if(min==null||isNaN(min))return "–";const neg=min<0;min=Math.abs(Math.round(min));return (neg?"−":"")+Math.floor(min/60)+" h "+pad(min%60)};
+const clock=m=>{m=((Math.round(m)%1440)+1440)%1440;return pad(Math.floor(m/60))+":"+pad(m%60)};
+// Nach dem Zurückstellen im Herbst werden Sommer-Nächte in Körperzeit gelesen: 01:38 Sommerzeit zählt im
+// Winter als 00:38. So bleibt der Rhythmus gleich und du wirst ohne Mühe eine Stunde früher. Im Frühjahr
+// bleiben die Uhrzeiten, wie sie waren: Dort passt du dich an die Uhr an (siehe dstCard).
+let NOW_OFF=new Date().getTimezoneOffset();
+const minOfDay=iso=>{const d=new Date(iso),off=d.getTimezoneOffset(),corr=off<NOW_OFF?off-NOW_OFF:0;return ((d.getHours()*60+d.getMinutes()+corr)%1440+1440)%1440};
+const bedMin=iso=>{let m=minOfDay(iso);if(m<12*60)m+=1440;return m}; // Minuten ab Mitternacht des Vortags
+const localKey=(d=new Date())=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const addDays=(key,n)=>{const d=new Date(key+"T12:00:00");d.setDate(d.getDate()+n);return localKey(d)};
+const nightKeyEvening=(d=new Date())=>d.getHours()>=12?addDays(localKey(d),1):localKey(d); // Datum der kommenden Nacht
+const fmtDate=s=>{const [y,m,d]=s.split("-");return d+"."+m+"."};
+const weekday=s=>new Date(s+"T12:00:00").getDay();
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),2400)}
+
+/* ===== Einstellungen ===== */
+const CFG={
+  get name(){return store.get("nw_name",IN_CLAUDE?"Ferdaws":"")},
+  get need(){return store.get("nw_need",450)},            // Schlafbedarf in Minuten
+  get win(){return store.get("nw_win",0)},               // Anpassung des Schlaffensters durch den Wochen-Coach
+  get night(){return store.get("nw_nightmode","auto")},  // auto | an | aus
+};
+
+/* ===== Daten =====
+   Schlaf: [Datum, Start, Ende, Schlaf min, REM, Tief, Leicht, Wach, Effizienz %, Einschlafdauer s, tiefster Puls, HRV, Schlafwert, Atemfrequenz]
+   Readiness: [Datum, Wert, Schlafbalance, HRV-Balance, Erholungsindex, Ruhepuls, Vornacht, Aktivitätsbalance, Temperatur-Abw.]
+   Aktivität: [Datum, Wert, Schritte, aktive kcal]   SpO2: [Datum, SpO2 %, Atemstörungsindex] */
+const EMPTY={sleep:[],ready:[],act:[],spo2:[]};
+// Jede Zeile wird geprüft: Datum im Format JJJJ-MM-TT, Zeitpunkte gültig, alles andere Zahlen oder leer.
+// So kann ein fremder Code oder Link keinen Text in die Seite schmuggeln.
+const ISO_D=/^\d{4}-\d{2}-\d{2}$/, numOr=v=>v==null||v===""||typeof v==="boolean"||!Number.isFinite(+v)?null:+v;
+function cleanRows(D){
+  D=D&&typeof D==="object"?D:{};
+  const arr=x=>Array.isArray(x)?x:[], ok=r=>Array.isArray(r)&&typeof r[0]==="string"&&ISO_D.test(r[0]);
+  const iso=v=>{const t=typeof v==="string"||typeof v==="number"?Date.parse(v):NaN;return isNaN(t)?null:new Date(t).toISOString()};
+  return {
+    sleep:arr(D.sleep).filter(r=>ok(r)&&iso(r[1])&&iso(r[2])).map(r=>[r[0],iso(r[1]),iso(r[2]),...r.slice(3,14).map(numOr)]),
+    ready:arr(D.ready).filter(ok).map(r=>[r[0],...r.slice(1,9).map(numOr)]),
+    act:arr(D.act).filter(ok).map(r=>[r[0],...r.slice(1,4).map(numOr)]),
+    spo2:arr(D.spo2).filter(ok).map(r=>[r[0],...r.slice(1,3).map(numOr)]),
+  };
+}
+function mergeData(a,b){
+  a=cleanRows(a);b=cleanRows(b);
+  const out={};
+  const keyed=(arr,kf)=>{const m=new Map();arr.forEach(r=>m.set(kf(r),r));return m};
+  out.sleep=[...keyed([...(a.sleep||[]),...(b.sleep||[])],r=>r[0]+"|"+new Date(r[1]).getTime()).values()];
+  ["ready","act","spo2"].forEach(k=>{out[k]=[...keyed([...(a[k]||[]),...(b[k]||[])],r=>r[0]).values()]});
+  const cut=addDays(localKey(),-200);
+  Object.keys(out).forEach(k=>out[k]=out[k].filter(r=>r[0]>=cut).sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:0));
+  return out;
+}
+let DATA=mergeData(EMPTY,store.get("nw_data",EMPTY));
+if(SNAP) DATA=mergeData(SNAP,DATA);
+let SOURCE=store.get("nw_source",{kind:SNAP?"snap":null,at:null});
+function saveData(src){store.set("nw_data",DATA);if(src){SOURCE={kind:src,at:Date.now()};store.set("nw_source",SOURCE)}}
+
+/* ===== Modell ===== */
+let M=null;
+function build(D){
+  const rows=D.sleep.map(r=>({date:r[0],start:r[1],end:r[2],total:r[3],rem:r[4],deep:r[5],light:r[6],awake:r[7],eff:r[8],lat:r[9]??null,low:r[10],hrv:r[11],score:r[12],breath:r[13]??null}));
+  const byDate={};rows.forEach(r=>{(byDate[r.date]=byDate[r.date]||[]).push(r)});
+  const nights=[],dozes=[],naps=[];
+  Object.keys(byDate).sort().forEach(d=>{
+    const list=byDate[d].slice().sort((a,b)=>b.total-a.total);
+    const main=list[0]; if(!main||main.total<120) return;
+    nights.push(main);
+    list.slice(1).forEach(r=>{
+      if(r.total<5) return;
+      const sh=new Date(r.start).getHours();
+      if(new Date(r.end)<=new Date(main.start)&&(sh>=17||sh<3)) dozes.push(r); else naps.push(r);
+    });
+  });
+  if(nights.length<3) return null;
+  const N=nights.slice(-30), first=N[0].date, last=N[N.length-1];
+  const D30=dozes.filter(r=>r.date>=first), naps30=naps.filter(r=>r.date>=first);
+  const ready=D.ready.map(r=>({date:r[0],score:r[1],sleepBal:r[2],hrvBal:r[3],recovery:r[4],rhr:r[5],prev:r[6],actBal:r[7],temp:r[8]})).slice(-30);
+  const act=D.act.map(r=>({date:r[0],score:r[1],steps:r[2],kcal:r[3]})).slice(-30);
+  const spo2=(D.spo2||[]).map(r=>({date:r[0],pct:r[1],bdi:r[2]})).slice(-30);
+  const need=CFG.need;
+  const beds=N.map(n=>bedMin(n.start)), wakes=N.map(n=>minOfDay(n.end));
+  const bedMean=avg(beds), bedSd=sd(beds), wakeMean=avg(wakes), wakeSd=sd(wakes);
+  const early=N.filter(n=>bedMin(n.start)<=bedMean), late=N.filter(n=>bedMin(n.start)>bedMean+20);
+  const pairs=act.map(a=>({a,n:N.find(n=>n.date===addDays(a.date,1))})).filter(p=>p.n);
+  const hiAct=pairs.filter(p=>p.a.steps>=9000), loAct=pairs.filter(p=>p.a.steps<5000);
+  const withDoze=N.filter(n=>D30.some(z=>z.date===n.date)), noDoze=N.filter(n=>!D30.some(z=>z.date===n.date));
+  // Schlafschuld: 14 Nächte, die letzte Nacht zählt voll, ältere Nächte weniger
+  const L14=N.slice(-14);let debt=0;
+  L14.forEach((n,i)=>{const w=0.35+0.65*(i/(Math.max(1,L14.length-1)));debt+=w*(need-Math.min(n.total,need+60))}); // Plus-Nächte zählen höchstens +1 h
+  debt=Math.max(0,debt);
+  // Chronotyp nach MCTQ: Schlafmitte an freien Tagen (Nächte vor Sa/So), korrigiert um Ausschlafen
+  const onsetMin=n=>bedMin(n.start)+Math.round((n.lat||0)/60);
+  const sleepDur=n=>(new Date(n.end)-new Date(n.start))/6e4-Math.round((n.lat||0)/60);
+  const mid=n=>onsetMin(n)+sleepDur(n)/2;
+  const free=N.filter(n=>[0,6].includes(weekday(n.date))), work=N.filter(n=>![0,6].includes(weekday(n.date)));
+  const MSF=avg(free.map(mid)), MSW=avg(work.map(mid)), SDf=avg(free.map(sleepDur)), SDw=avg(work.map(sleepDur));
+  let MSFsc=MSF;
+  if(MSF!=null&&SDw!=null&&SDf>SDw) MSFsc=MSF-0.5*(SDf-(5*SDw+2*SDf)/7);
+  const midAll=avg(N.map(mid));
+  const chrono=MSFsc??midAll;
+  const sjl=(MSF!=null&&MSW!=null)?Math.abs(MSF-MSW):null;
+  // Schlaf-Regelmäßigkeit (SRI): gleicher Zustand (Schlaf/wach) zur gleichen Uhrzeit an aufeinanderfolgenden Tagen
+  const sri=calcSRI(rows,N);
+  // Konsistenz-Serie: Nächte in Folge mit Einschlafen im Zielfenster ±30 min
+  const target=planTimes(wakeMean).bed;
+  let streak=0;for(let i=N.length-1;i>=0;i--){if(Math.abs(bedMin(N[i].start)-target)<=30)streak++;else break}
+  const inWin=N.slice(-14).filter(n=>Math.abs(bedMin(n.start)-target)<=30).length;
+  const m={
+    N,last,dozes:D30,naps:naps30,ready,act,spo2,need,
+    avgTotal:avg(N.map(n=>n.total)),avgScore:avg(N.map(n=>n.score)),avgDeep:avg(N.map(n=>n.deep)),avgRem:avg(N.map(n=>n.rem)),avgLight:avg(N.map(n=>n.light)),
+    avgAwake:avg(N.map(n=>n.awake)),avgEff:avg(N.map(n=>n.eff)),avgLat:(v=>v==null?null:v/60)(avg(N.map(n=>n.lat))),avgHrv:avg(N.map(n=>n.hrv)),avgLow:avg(N.map(n=>n.low)),
+    avgBreath:avg(N.map(n=>n.breath)),breathSd:sd(N.map(n=>n.breath)),avgTib:avg(N.map(n=>(new Date(n.end)-new Date(n.start))/6e4)),
+    hrv7:avg(N.slice(-7).map(n=>n.hrv)),bedMean,bedSd,wakeMean,wakeSd,
+    scoreEarly:avg(early.map(n=>n.score)),scoreLate:avg(late.map(n=>n.score)),nEarly:early.length,nLate:late.length,
+    deepHi:avg(hiAct.map(p=>p.n.deep)),deepLo:avg(loAct.map(p=>p.n.deep)),nHi:hiAct.length,nLo:loAct.length,
+    scoreDoze:avg(withDoze.map(n=>n.score)),scoreNoDoze:avg(noDoze.map(n=>n.score)),nDoze:withDoze.length,
+    dozeCmp:withDoze.length>=3&&noDoze.length>=3?{on:avg(withDoze.map(onsetMin))-avg(noDoze.map(onsetMin)),awake:avg(withDoze.map(n=>n.awake))-avg(noDoze.map(n=>n.awake)),deep:avg(withDoze.map(n=>n.deep))-avg(noDoze.map(n=>n.deep))}:null,
+    sleepBal:avg(ready.map(r=>r.sleepBal)),readyAvg:avg(ready.map(r=>r.score)),readyLast:ready[ready.length-1]||null,
+    tempAbs:ready.length?avg(ready.map(r=>Math.abs(r.temp||0))):null,steps:avg(act.map(a=>a.steps)),
+    spo2Avg:avg(spo2.map(s=>s.pct)),bdiAvg:avg(spo2.map(s=>s.bdi)),
+    best:N.reduce((a,b)=>b.score!=null&&(a.score==null||b.score>a.score)?b:a,N[0]),
+    debt,MSF,MSW,MSFsc,midAll,chrono,sjl,nFree:free.length,nWork:work.length,sri,streak,inWin,
+    onsetMean:avg(N.map(onsetMin)),
+    week:{n:N.slice(-7).length,total:avg(N.slice(-7).map(n=>n.total)),score:avg(N.slice(-7).map(n=>n.score)),
+      se:avg(N.slice(-7).map(n=>n.total))/avg(N.slice(-7).map(n=>(new Date(n.end)-new Date(n.start))/6e4))*100,
+      lat:(v=>v==null?null:v/60)(avg(N.slice(-7).map(n=>n.lat))),dozes:D30.filter(z=>z.date>=N.slice(-7)[0].date).length},
+  };
+  m.share={deep:m.avgDeep/m.avgTotal,rem:m.avgRem/m.avgTotal};
+  m.factors=factorList(m);
+  m.exp=experiments(m);
+  return m;
+}
+
+function calcSRI(rows,N){
+  // Fenster pro Nacht: 12:00 am Vortag bis 12:00 am Tag der Nacht (1440 Minuten)
+  const have=new Set(N.map(n=>n.date));
+  const win=date=>{
+    const a=new Uint8Array(1440), t0=Date.parse(addDays(date,-1)+"T12:00:00Z")+NOW_OFF*6e4;
+    rows.forEach(r=>{
+      const s=Math.floor((new Date(r.start).getTime()-t0)/6e4), e=Math.floor((new Date(r.end).getTime()-t0)/6e4);
+      if(e<0||s>=1440||r.total<5) return;
+      // Wachzeiten innerhalb der Nacht sind nicht minutengenau bekannt: die Effizienz verteilt sie gleichmäßig
+      for(let i=Math.max(0,s);i<Math.min(1440,e);i++) a[i]=1;
+    });
+    return a;
+  };
+  let same=0,tot=0;
+  N.forEach(n=>{
+    const nx=addDays(n.date,1); if(!have.has(nx)) return;
+    const A=win(n.date),B=win(nx);
+    for(let i=0;i<1440;i++){tot++;if(A[i]===B[i])same++}
+  });
+  if(tot<1440*5) return null;
+  return Math.round(200*same/tot-100);
+}
+
+function factorList(m){
+  const st=(v,good,ok,higherBetter=true)=>v==null?"info":higherBetter?(v>=good?"good":v>=ok?"ok":"bad"):(v<=good?"good":v<=ok?"ok":"bad");
+  const L=[];
+  const lackMin=Math.max(0,Math.round((m.need-m.avgTotal)/5)*5);
+  L.push({id:"dauer",icon:"clock-3",name:"Schlafdauer",group:"schlaf",w:3,
+    status:st(m.avgTotal,m.need,m.need-30),val:hm(m.avgTotal),unit:`Ø pro Nacht · Bedarf ${hm(m.need)}`,
+    why:`Fachgesellschaften empfehlen Erwachsenen mindestens 7 Stunden. In einer Studie mit 15 jungen Männern lag der Bedarf bei etwa 8 h 25 (Kitamura 2016).${lackMin?` Dir fehlen im Schnitt ${lackMin} Minuten.`:""} Kurze Nächte kürzen vor allem den REM-Schlaf, der am Morgen liegt.`,
+    do:lackMin?"Senk zuerst die Wachzeit im Bett. Mach danach bei Bedarf 15 Minuten früher das Licht aus.":"Dauer passt. Halte sie."});
+  L.push({id:"debt",icon:"hourglass",name:"Schlafschuld",group:"schlaf",w:3,
+    status:m.debt<300?"good":m.debt<600?"ok":"bad",val:hm(m.debt),unit:"letzte 14 Nächte, neue Nächte zählen stärker",
+    why:"Fehlender Schlaf summiert sich und macht müde, auch wenn eine einzelne Nacht gut war. Eine Stunde Schuld braucht etwa 4 Nächte, bis sie abgebaut ist. Oura zeigt etwas Ähnliches als Schlafbalance.",
+    do:m.debt>60?`Mit ${m.debt>300?30:15} Minuten mehr Schlaf pro Nacht ist sie rechnerisch in etwa ${Math.ceil(m.debt/(m.debt>300?30:15))} Nächten abgebaut.`:"Kaum Schuld. Sehr gut."});
+  if(m.sleepBal!=null) L.push({id:"balance",icon:"scale",name:"Schlafbalance",group:"schlaf",w:2,
+    status:st(m.sleepBal,80,70),val:Math.round(m.sleepBal),unit:"Ø von 100 · Readiness-Faktor",
+    why:"Zeigt, ob du über die letzten zwei Wochen genug geschlafen hast. Sie steigt nur durch mehrere ausreichende Nächte in Folge.",
+    do:"Eine lange Nacht am Wochenende reicht nicht. Gleichmäßig genug schlafen hilft am meisten."});
+  L.push({id:"rhythmus",icon:"calendar-clock",name:"Regelmäßigkeit",group:"rhythmus",w:3,
+    status:st(m.bedSd,25,45,false),val:"± "+Math.round(m.bedSd)+" min",unit:"Streuung der Bettzeit",
+    why:`Die innere Uhr braucht feste Zeiten. Regelmäßiger Schlaf sagte in einer großen Studie das Sterberisiko besser voraus als die Schlafdauer. ${m.nLate>=3?`Bei dir: Nächte, die mehr als 20 Minuten später als dein Schnitt starteten, hatten Ø ${Math.round(m.scoreLate)} statt ${Math.round(m.scoreEarly)} Punkte. Teilweise liegt das an Ouras Timing-Wertung.`:""}`,
+    do:"Steh an allen 7 Tagen zur gleichen Zeit auf, möglichst auf 15 Minuten genau. Die Zeit fürs Bett ergibt sich dann."});
+  if(m.sri!=null) L.push({id:"sri",icon:"orbit",name:"Schlaf-Regelmäßigkeit (SRI)",group:"rhythmus",w:2,
+    status:st(m.sri,87,80),val:m.sri,unit:"von 100 · aus Bettzeiten geschätzt",
+    why:"Der SRI misst, wie oft du zur gleichen Uhrzeit an zwei Tagen in Folge im gleichen Zustand bist, also wach oder schlafend. In der UK-Biobank-Studie mit rund 61.000 Menschen hatten alle, die regelmäßiger schliefen als das unregelmäßigste Fünftel, ein um 20 bis 48 % geringeres Sterberisiko. Regelmäßigkeit sagte das besser voraus als die Schlafdauer. Das ist ein Zusammenhang, kein Beweis. Nachtwerk schätzt den Wert aus Bettzeiten, darum ist er meist höher als in der Studie (Median dort 81).",
+    do:"Gleiche Zeiten auch am Wochenende heben den Wert am schnellsten."});
+  if(m.sjl!=null&&m.nFree>=2&&m.nWork>=3) L.push({id:"sjl",icon:"sun-moon",name:"Sozialer Jetlag",group:"rhythmus",w:2,
+    status:st(m.sjl,30,60,false),val:hm(m.sjl),unit:"Schlafmitte Wochenende gegenüber Werktagen",
+    why:"Wenn sich die Schlafmitte am Wochenende verschiebt, fühlt sich der Montag wie nach einem Flug an. Ab einer Stunde gilt er als relevant, ab zwei Stunden als hoch.",
+    do:"Am Wochenende höchstens eine Stunde später aufstehen."});
+  L.push({id:"doze",icon:"sofa",name:"Abends eindösen",group:"schlaf",w:3,
+    status:m.dozes.length<=1?"good":m.dozes.length<=4?"ok":"bad",val:m.dozes.length+"×",unit:"kurzer Schlaf vor dem Zubettgehen (30 Tage)",
+    why:`Schlaf am Abend baut den Schlafdruck ab, den du später zum Einschlafen und für Tiefschlaf brauchst. Ein Rechenbeispiel nach dem Zwei-Prozess-Modell: Nach 30 Minuten Eindösen um 22:30 hast du beim Zubettgehen etwa 10 % weniger Schlafdruck. Oura erkennt Nickerchen erst ab 15 Minuten, die echte Zahl kann also höher sein. ${m.dozeCmp?`Deine ${m.nDoze} Nächte nach dem Eindösen: Einschlafen ${Math.abs(Math.round(m.dozeCmp.on))} Minuten ${m.dozeCmp.on>=0?"später":"früher"}, ${Math.abs(Math.round(m.dozeCmp.awake))} Minuten ${m.dozeCmp.awake>=0?"mehr":"weniger"} wach, Tiefschlaf ${m.dozeCmp.deep>=0?"+":"−"}${Math.abs(Math.round(m.dozeCmp.deep))} Minuten. Wenige Nächte und oft nach kurzen Nächten, also nur ein Hinweis.`:""}`,
+    do:"Wirst du lange vor der Bettzeit müde, kann das an Schlafmangel oder an einer früheren inneren Uhr liegen. Steh dann auf und bleib aktiv. Leg dich nicht hin. Passiert es oft, verschieb deine Schlafzeit früher (Rhythmus → Uhr sanft verschieben)."});
+  L.push({id:"wach",icon:"eye",name:"Wachzeit im Bett",group:"schlaf",w:3,
+    status:st(m.avgAwake,40,60,false),val:Math.round(m.avgAwake)+" min",unit:`Ø pro Nacht · Zeit im Bett ${hm(m.avgTib)}`,
+    why:"Oura zählt Einschlafen, Aufwachen in der Nacht und die Zeit morgens im Bett. Viel Wachliegen schwächt die Verbindung von Bett und Schlaf.",
+    do:"Nach etwa 20 Minuten wach: aufstehen, gedimmtes Licht, zurück ins Bett, wenn du schläfrig bist. Morgens direkt aufstehen."});
+  L.push({id:"eff",icon:"gauge",name:"Schlafeffizienz",group:"schlaf",w:1,
+    status:st(m.avgEff,85,80),val:Math.round(m.avgEff)+" %",unit:"Anteil Schlaf an der Zeit im Bett",
+    why:"Ab 85 % gilt Schlaf als effizient, ab 90 % als sehr gut. Das Schlaffenster ist die Zeit von Licht aus bis Aufstehen. In der Schlaftherapie (KVT-I) steuert die Effizienz, wie lang es sein darf.",do:"Bett nur für Schlaf nutzen, nicht zum Scrollen oder Grübeln. Nach dem letzten Aufwachen innerhalb von 10 Minuten aufstehen."});
+  if(m.avgLat!=null) L.push({id:"lat",icon:"timer",name:"Einschlafdauer",group:"schlaf",w:1,
+    status:(m.avgLat>=10&&m.avgLat<=20)?"good":m.avgLat<=30?"ok":"bad",val:Math.round(m.avgLat)+" min",unit:"Ø bis zum Einschlafen",
+    why:"10 bis 20 Minuten sind ideal. Unter 5 Minuten kann auf Schlafmangel hindeuten. Über 30 Minuten spricht für zu wenig Schlafdruck oder Grübeln.",
+    do:m.avgLat<10?"Du schläfst schnell ein. Das kann ein Zeichen für Schlafmangel sein. Ist deine Schlafeffizienz gut, hilft etwas mehr Zeit im Bett.":m.avgLat>30?"Erst ins Bett, wenn du schläfrig bist. Grübeln vorher aufschreiben.":"Passt gut. Halte die Abendroutine bei."});
+  L.push({id:"tief",icon:"waves",name:"Tiefschlaf",group:"koerper",w:1,
+    status:st(m.avgDeep,75,55),val:hm(m.avgDeep),unit:Math.round(m.share.deep*100)+" % deines Schlafs",
+    why:"Tiefschlaf ist wichtig für die körperliche Erholung und das Immunsystem. Er kommt vor allem in der ersten Nachthälfte und hängt vom Schlafdruck ab. Typisch sind 15 bis 25 %.",
+    do:"Abends nicht eindösen. Kein schweres Essen in den 3 Stunden vor dem Schlafengehen. Bewegung am Tag hilft."});
+  L.push({id:"rem",icon:"brain",name:"REM-Schlaf",group:"koerper",w:1,
+    status:st(m.share.rem*100,20,17),val:hm(m.avgRem),unit:Math.round(m.share.rem*100)+" % deines Schlafs",
+    why:"Gedächtnis, Lernen und Gefühle. 20 bis 25 % sind typisch. REM liegt vor allem in den letzten Stunden der Nacht.",
+    do:"Längere Nächte bringen hier am meisten. Alkohol unterdrückt REM."});
+  if(m.avgHrv!=null) L.push({id:"hrv",icon:"activity",name:"HRV",group:"koerper",w:1,
+    status:m.hrv7<m.avgHrv*0.85?"ok":"good",val:Math.round(m.avgHrv)+" ms",unit:"Ø nachts · letzte 7 Nächte "+Math.round(m.hrv7)+" ms",
+    why:`Herzratenvariabilität zeigt, wie erholt dein Nervensystem ist. Vergleiche nur mit dir selbst, nicht mit anderen.${m.avgHrv>120?" Dein Wert ist hoch und passt zu deinem niedrigen Ruhepuls. Wichtig ist nur der Verlauf gegenüber deinem eigenen Schnitt.":""}`,
+    do:"Fällt sie mehr als 15 % unter deinen Schnitt: ruhiger Tag, kein Alkohol, früher ins Bett."});
+  if(m.avgLow!=null) L.push({id:"puls",icon:"heart-pulse",name:"Ruhepuls",group:"koerper",w:1,
+    status:st(m.avgLow,60,70,false),val:Math.round(m.avgLow)+" Schläge/min",unit:"Ø tiefster Puls nachts",
+    why:"Ein niedriger Puls in der Nacht spricht oft für gute Fitness. Spätes Essen, Alkohol oder ein Infekt heben ihn an. Wichtig ist der Vergleich mit deinem eigenen Schnitt.",do:"Letzte große Mahlzeit 3 Stunden vor dem Schlafengehen."});
+  if(m.avgBreath!=null) L.push({id:"atem",icon:"wind",name:"Atemfrequenz",group:"koerper",w:1,
+    status:(m.avgBreath>=12&&m.avgBreath<=20&&m.breathSd<1)?"good":"ok",val:m.avgBreath.toFixed(1)+" /min",unit:"Ø nachts",
+    why:"Stabil zwischen 12 und 20 ist normal. Ein plötzlicher Anstieg um mehr als 1 bis 2 Atemzüge pro Minute kann auf einen Infekt hindeuten.",do:"Nur auf deutliche Sprünge achten."});
+  if(m.spo2Avg!=null) L.push({id:"spo2",icon:"droplets",name:"Sauerstoff nachts",group:"koerper",w:1,
+    status:m.spo2Avg>=95?"good":m.spo2Avg>=92?"ok":"bad",val:m.spo2Avg.toFixed(1)+" %",unit:m.bdiAvg!=null?`Atemstörungs-Index Ø ${m.bdiAvg.toFixed(1)}`:"Ø SpO₂",
+    why:"Werte um 95 bis 100 % sind normal. Der Ring kann keine Schlafapnoe feststellen. Häufige Atemstörungen zusammen mit Schnarchen und Tagesmüdigkeit solltest du ärztlich abklären lassen.",do:"Bei auffälligen Werten: Hausarztpraxis oder Schlaflabor."});
+  if(m.tempAbs!=null) L.push({id:"temp",icon:"thermometer",name:"Körpertemperatur",group:"koerper",w:1,
+    status:m.tempAbs<=.2?"good":"info",val:"± "+m.tempAbs.toFixed(2)+" °C",unit:"Ø Abweichung von deiner Basis",
+    why:"Stabil ist gut. Steigt sie zwei Nächte lang um 0,3 bis 0,5 °C, kann das an Alkohol, spätem Essen, einem warmen Zimmer, Stress oder einem beginnenden Infekt liegen. Auch der Zyklus verschiebt die Temperatur.",do:"Achte auf Ausreißer. Fühlst du dich krank: Ruhe statt Training."});
+  if(m.steps!=null) L.push({id:"akt",icon:"footprints",name:"Bewegung am Tag",group:"tag",w:1,
+    status:st(m.steps,8000,6000),val:Math.round(m.steps).toLocaleString("de-DE"),unit:"Ø Schritte pro Tag",
+    why:(m.nHi>=3&&m.nLo>=3)?`Nach Tagen mit mehr als 9.000 Schritten hattest du Ø ${Math.round(m.deepHi)} min Tiefschlaf, nach Tagen unter 5.000 Ø ${Math.round(m.deepLo)} min (nur ${m.nHi} bzw. ${m.nLo} Nächte, also ein Hinweis).`:"Bewegung am Tag erhöht den Schlafdruck am Abend.",
+    do:"Tageslicht am Vormittag, Bewegung am Nachmittag. Sport am Abend ist in Ordnung. Nur harten Sport mindestens 1 Stunde vor dem Schlafengehen beenden."});
+  return L;
+}
+
+/* ===== Tagebuch und persönliche Experimente ===== */
+const TAGS=[
+  {id:"koffein",t:"Kaffee am Nachmittag",i:"coffee",bad:true},
+  {id:"alkohol",t:"Alkohol",i:"wine",bad:true},
+  {id:"essen",t:"Spät gegessen",i:"utensils",bad:true},
+  {id:"sport",t:"Harter Sport spät",i:"dumbbell",bad:true},
+  {id:"handy",t:"Handy im Bett",i:"smartphone",bad:true},
+  {id:"stress",t:"Stress",i:"zap",bad:true},
+  {id:"licht",t:"Morgenlicht",i:"sunrise",bad:false},
+  {id:"dose",t:"Abends eingedöst",i:"sofa",bad:true},
+  {id:"routine",t:"Abendroutine",i:"moon-star",bad:false},
+];
+const diary=()=>store.get("nw_diary",{});
+function experiments(m){
+  const d=diary(),res=[];
+  TAGS.forEach(tg=>{
+    const yes=[],no=[];
+    m.N.forEach(n=>{const e=d[n.date];if(!e)return;(e.tags||[]).includes(tg.id)?yes.push(n):no.push(n)});
+    if(yes.length>=3&&no.length>=3){
+      const ds=avg(yes.map(n=>n.score))-avg(no.map(n=>n.score));
+      const dd=avg(yes.map(n=>n.deep))-avg(no.map(n=>n.deep));
+      const dh=avg(yes.filter(n=>n.hrv).map(n=>n.hrv))-avg(no.filter(n=>n.hrv).map(n=>n.hrv));
+      const dt=avg(yes.map(n=>n.total))-avg(no.map(n=>n.total));
+      res.push({tg,ny:yes.length,nn:no.length,ds,dd,dh,dt,sure:yes.length>=5&&no.length>=5});
+    }
+  });
+  const rated=m.N.filter(n=>d[n.date]&&d[n.date].r);
+  return {res,count:Object.keys(d).length,rated:rated.length};
+}
+
+/* ===== Abendplan ===== */
+const TIB_MIN=400;
+function planTimes(wakeMean){
+  // Zeit im Bett = Schlafbedarf + 40 Minuten für Einschlafen und kurzes Aufwachen, dazu die Anpassung des Coachs.
+  // Nie unter 6 h 40 im Bett (Untergrenze wie in der Schlafrestriktion üblich).
+  // bed zählt in Minuten ab Mitternacht des Vortags: 23:00 = 1380, 01:30 = 1530.
+  const wm=wakeMean??(M?M.wakeMean:480), tgt=store.get("nw_wake",null);
+  let wake=tgt==null?Math.round(wm/15)*15:tgt;
+  const sh=shiftPlan();
+  if(sh&&sh.active) wake=sh.today;
+  const tib=Math.max(TIB_MIN,CFG.need+40+CFG.win), b=((wake-tib)%1440+1440)%1440;
+  // Nacht der Zeitumstellung im Herbst: Licht aus bleibt in Sommerzeit, der Wecker steht schon in Winterzeit.
+  // Gilt, wenn der Plan der Körperzeit folgt (kein eigenes Ziel) oder dein Ziel mitrücken soll.
+  const follow=(tgt==null&&!(sh&&sh.active))||store.get("nw_dst",null)!=null;
+  const dOff=follow?Math.min(0,NOW_OFF-new Date(nightKeyEvening()+"T12:00:00").getTimezoneOffset()):0;
+  return {wake:((wake+dOff)%1440+1440)%1440,wake0:wake,bed:b<720?b+1440:b,tib,shift:sh,dOff};
+}
+function shiftPlan(){
+  // Sanft verschieben: alle 3 Tage 15 Minuten in Richtung Ziel
+  const s=store.get("nw_shift",null); if(!s) return null;
+  const days=Math.floor((new Date(localKey()+"T12:00:00")-new Date(s.start+"T12:00:00"))/864e5);
+  const dir=Math.sign(s.to-s.from), steps=Math.ceil(Math.abs(s.to-s.from)/15);
+  const done=Math.min(steps,Math.floor(days/3)+1);
+  const today=done>=steps?s.to:s.from+dir*15*done;
+  return {...s,steps,done,today,active:true,finished:done>=steps};
+}
+const GOALS=[{id:"dauer",t:"Länger schlafen"},{id:"rhythmus",t:"Fester Rhythmus"},{id:"wach",t:"Weniger wach liegen"},{id:"doze",t:"Abends wach bleiben"}];
+function defaultGoals(){return M?M.factors.filter(f=>f.status==="bad"&&GOALS.some(g=>g.id===f.id)).sort((a,b)=>b.w-a.w).slice(0,2).map(f=>f.id):[]}
+function planSteps(){
+  const {wake,bed}=planTimes();
+  const g=store.get("nw_goals",null)||defaultGoals();
+  const dozeAt=M&&M.dozes.length?avg(M.dozes.map(z=>bedMin(z.start))):null, dozeT=dozeAt!=null?clock(dozeAt):null;
+  const S=[
+    {t:bed-540,id:"koffein",i:"coffee",b:"Letzter Kaffee",s:"Eine Auswertung von 24 Studien rät bei einer normalen Tasse Kaffee zu knapp 9 Stunden Abstand. Stärkere Getränke brauchen länger. Danach nur noch koffeinfrei, also auch keine Cola, keinen Mate und keinen schwarzen oder grünen Tee."},
+    {t:bed-240,id:"alkohol",i:"wine",b:"Kein Alkohol mehr",s:"Alkohol stiehlt REM-Schlaf und lässt den Puls nachts steigen. Am besten ganz weglassen."},
+    {t:bed-180,id:"licht",i:"lamp",b:"Licht dimmen, letzte Mahlzeit",s:"Nur noch warmes, schwaches Licht, Lampen tief statt Deckenlicht. Helles Licht bremst Melatonin und schiebt deine Uhr nach hinten. Danach nur noch Kleinigkeiten essen."+(M&&M.dozes.length>=3?" Gedimmt heißt nicht hinlegen: Bleib aufrecht bis zum Bett, sonst nickst du weg.":"")},
+    {t:bed-90,id:"dusche",i:"bath",b:"Warm duschen oder baden",s:"40 bis 42 °C, mindestens 10 Minuten, 1 bis 2 Stunden vor dem Schlafengehen. Danach kühlt der Körper ab, das macht schläfrig."},
+  ];
+  // Der Hinweis kommt kurz vor der Uhrzeit, zu der du sonst wegnickst
+  if(g.includes("doze")||(M&&M.dozes.length>=3)) S.push({t:dozeAt!=null?Math.min(Math.round((dozeAt-20)/5)*5,bed-75):bed-75,id:"sofa",i:"sofa",b:"Nicht auf dem Sofa eindösen",s:`${dozeT?`Du nickst oft gegen ${dozeT} ein. `:""}Wirst du müde, steh kurz auf oder geh direkt ins Bett.`});
+  S.push({t:bed-45,id:"parken",i:"notebook-pen",b:"Gedanken parken",s:"5 Minuten: Schreib auf, was morgen ansteht, so konkret wie möglich. Das kann beim Einschlafen helfen. Sorgen schreibst du am besten schon am frühen Abend auf."});
+  S.push({t:bed-30,id:"screen",i:"snowflake",b:"Handy weg, Zimmer kühl",s:"Etwa 16 bis 19 °C, ganz dunkel und leise. Lesen, Dehnen oder 10 Minuten Ruhe-Atmung."});
+  S.push({t:bed,id:"aus",i:"moon",b:"Licht aus",s:(g.includes("rhythmus")?"Jeden Tag ungefähr gleich, auch am Wochenende. ":`Ziel: ${hm(CFG.need)} Schlaf. `)+"Noch nicht schläfrig? Dann bleib auf, bis dir die Augen zufallen."});
+  S.sort((a,b)=>a.t-b.t);
+  S.push({t:wake+1440,id:"auf",i:"sunrise",b:"Aufstehen und Tageslicht",s:(g.includes("wach")?"Steh nach dem Wecker gleich auf, spätestens nach 10 Minuten. ":"Jeden Tag zur gleichen Zeit, auch am Wochenende. ")+"In der ersten Stunde 15 bis 30 Minuten raus ins Tageslicht, an trüben Tagen eher 30. Das gibt deiner inneren Uhr den Takt."});
+  return S;
+}
+
+/* ===== Navigation ===== */
+const TABS=[["heute","Heute","moon-star"],["rhythmus","Rhythmus","sun-moon"],["analyse","Analyse","chart-no-axes-column"],["faktoren","Faktoren","layers"],["abend","Abend","sparkles"]];
+let tab=store.get("nw_tab","heute");
+if(location.hash&&TABS.some(t=>t[0]===location.hash.slice(1))) tab=location.hash.slice(1);
+if(!TABS.some(t=>t[0]===tab)) tab="heute";
+let factorFilter="alle";
+let animate=true; // Einblenden nur beim ersten Bild und beim Tab-Wechsel, nicht bei jedem Tippen
+function setTab(t){tab=t;store.set("nw_tab",t);closeOv();animate=true;render();$("#screen").scrollTo({top:0})}
+function keepScroll(fn){const y=$("#screen").scrollTop;fn();$("#screen").scrollTop=y}
+
+function srcLine(){
+  if(!M) return "";
+  const lastDate=M.last.date;
+  // Vor dem Aufstehen ist die Nacht von gestern die neueste, die es geben kann
+  const now=new Date(),nm=now.getHours()*60+now.getMinutes(),exp=nm<planTimes().wake+60?addDays(localKey(),-1):localKey();
+  const days=Math.round((new Date(exp+"T12:00:00")-new Date(lastDate+"T12:00:00"))/864e5);
+  const stale=days>=1;
+  const live=SOURCE.kind==="live"||SOURCE.kind==="oura";
+  let action="";
+  if(IN_CLAUDE&&liveState.btn) action=`<button data-act="live">${liveState.btn}</button>`;
+  else if(!IN_CLAUDE){const left=OURA.daysLeft();action=left!=null&&left<=3?`<button data-open="oura">Oura-Anmeldung läuft ab</button>`:OURA.token()?`<button data-act="sync">Aktualisieren</button>`:`<button data-open="oura">Neue Daten holen</button>`}
+  return `<div class="srcbar"><span class="pulse ${live&&!stale?"live":""}"></span>
+  <span>${live?"Live von Oura":"Datenstand"} · letzte Nacht ${fmtDate(lastDate)}${days===1?" · die letzte Nacht fehlt noch: Oura-App öffnen":days>=2?` · Ring seit ${days} Tagen nicht synchronisiert`:""}</span>${action}</div>`;
+}
+function appbar(){
+  return `<div class="appbar fu" style="animation-delay:.05s">
+    <svg class="logo" viewBox="0 0 256 256" aria-hidden="true"><path d="M 128 128 C 198.692 128 256 185.308 256 256 L 151.883 256 C 149.812 220.307 120.213 192 84 192 C 47.787 192 18.188 220.307 16.117 256 L 0 256 C 0 185.308 57.308 128 128 128 Z M 104.117 0 C 106.188 35.694 135.787 64 172 64 C 208.213 64 237.812 35.694 239.883 0 L 256 0 C 256 70.692 198.692 128 128 128 C 57.308 128 0 70.692 0 0 Z"/></svg>
+    <div class="badge liquid-glass" style="padding:8px 12px">${ic("timer","")}<span>Nachtwerk</span></div>
+    <button class="circle-btn liquid-glass" data-open="settings" aria-label="Einstellungen und Daten">${ic("menu")}</button>
+  </div>`;
+}
+function greet(){const h=new Date().getHours();return h<5?"Gute Nacht":h<11?"Guten Morgen":h<17?"Hallo":h<22?"Guten Abend":"Gute Nacht"}
+function levelInfo(s){
+  const lv=[{n:"Basis",min:0},{n:"Solide",min:70},{n:"Gut",min:80},{n:"Sehr gut",min:85},{n:"Ausgezeichnet",min:90}];
+  const i=lv.findLastIndex(l=>s>=l.min);const cur=lv[i],next=lv[i+1]||cur;
+  return {cur,next,pct:next===cur?100:Math.round((s-cur.min)/(next.min-cur.min)*100)};
+}
+function headline(m){
+  const bad=new Set(m.factors.filter(f=>f.status==="bad").map(f=>f.id));
+  const parts=[];
+  if(bad.has("dauer")||bad.has("debt")||bad.has("balance")) parts.push("Zeit");
+  if(bad.has("rhythmus")||bad.has("sri")||bad.has("sjl")) parts.push("Rhythmus");
+  if(bad.has("wach")||bad.has("doze")) parts.push("Ruhe");
+  const rec=m.factors.filter(f=>["hrv","puls","tief"].includes(f.id)&&f.status==="good").length>=2;
+  if(!parts.length) return rec?"Starke Basis. Jetzt geht es um den <em>Feinschliff</em>.":"Solide Nächte. Wir holen <em>mehr</em> heraus.";
+  const list=parts.length===1?parts[0]:parts.slice(0,-1).join(", ")+" und "+parts[parts.length-1];
+  return `${rec?"Dein Körper erholt sich gut.":"Da geht mehr."} Deinem Schlaf ${parts.length>1?"fehlen":"fehlt"} <em>${list}</em>.`;
+}
+
+/* ===== Screens ===== */
+function screenEmpty(){
+  return `${appbar()}
+  <p class="eyebrow fu" style="animation-delay:.1s">${greet()}${CFG.name?", "+esc(CFG.name):""}</p>
+  <h1 class="title fu" style="animation-delay:.15s">Willkommen bei <em>Nachtwerk</em>.</h1>
+  <p class="lead fu" style="animation-delay:.2s">Hier entsteht dein persönlicher Schlafplan aus deinen Oura-Daten. Alles bleibt auf diesem Gerät.</p>
+  <div class="stack" style="margin-top:22px">
+    <button class="card liquid-glass lever fu" style="text-align:left;animation-delay:.3s" data-open="code"><div class="icw">${ic("clipboard")}</div><div><h3>Code aus Claude einfügen</h3><p>Öffne Nachtwerk in Claude, tippe auf „Aufs Handy übertragen“ und füge den Code hier ein. Geht sofort.</p></div></button>
+    <button class="card liquid-glass lever fu" style="text-align:left;animation-delay:.38s" data-open="oura"><div class="icw">${ic("link")}</div><div><h3>Direkt mit Oura verbinden</h3><p>Einmal einrichten, danach holt die App deine Nächte selbst.</p></div></button>
+    <button class="card liquid-glass lever fu" style="text-align:left;animation-delay:.46s" data-act="demo"><div class="icw">${ic("sparkles")}</div><div><h3>Mit Beispieldaten ansehen</h3><p>Erfundene Nächte, nur zum Ausprobieren. Du kannst sie jederzeit ersetzen.</p></div></button>
+  </div>`;
+}
+
+function screenHeute(){
+  const m=M,n=m.last,L=levelInfo(m.avgScore),C=2*Math.PI*64;
+  const top=m.factors.filter(f=>f.status==="bad").sort((a,b)=>b.w-a.w).slice(0,3);
+  const debtCls=m.debt<300?"":m.debt<600?"warn":"bad";
+  return `${appbar()}
+  <p class="eyebrow fu" style="animation-delay:.1s">${greet()}${CFG.name?", "+esc(CFG.name):""}</p>
+  <h1 class="title fu" style="animation-delay:.15s">${headline(m)}</h1>
+  ${srcLine()}
+  ${checkinCard()}
+  <div class="ringbox fu" style="animation-delay:.25s">
+    <div class="ring"><svg viewBox="0 0 150 150"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0b3c2"/><stop offset="1" stop-color="#8c2440"/></linearGradient></defs>
+      <circle cx="75" cy="75" r="64" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="9"/>
+      <circle class="ring-arc" id="arc" cx="75" cy="75" r="64" fill="none" stroke="url(#rg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-target="${C*(1-(n.score||0)/100)}"/></svg>
+      <div class="center"><div class="big num">${n.score??"–"}</div><div class="lbl">Schlafwert<br>Nacht ${fmtDate(n.date)}</div></div></div>
+    <div class="ringside">
+      <div class="mini"><b class="num">${hm(n.total)}</b><span>geschlafen</span></div>
+      <div class="mini"><b class="num">${clock(minOfDay(n.start))} – ${clock(minOfDay(n.end))}</b><span>im Bett</span></div>
+      ${m.readyLast?`<div class="mini"><b class="num">${m.readyLast.score}</b><span>Readiness am ${fmtDate(m.readyLast.date)}</span></div>`:""}
+    </div>
+  </div>
+  ${weekLine()}
+  <div class="grid2 fu" style="margin-top:18px;animation-delay:.32s">
+    <div class="card liquid-glass stat"><div class="k">Tiefschlaf</div><div class="v num">${hm(n.deep)}</div><div class="d">Ø ${hm(m.avgDeep)}</div></div>
+    <div class="card liquid-glass stat"><div class="k">REM</div><div class="v num">${hm(n.rem)}</div><div class="d">Ø ${hm(m.avgRem)}</div></div>
+    <div class="card liquid-glass stat"><div class="k">HRV</div><div class="v num">${n.hrv??"–"}<small>ms</small></div><div class="d">Ø ${m.avgHrv?Math.round(m.avgHrv):"–"} ms</div></div>
+    <div class="card liquid-glass stat"><div class="k">Wach</div><div class="v num">${n.awake??"–"}<small>min</small></div><div class="d">Ø ${Math.round(m.avgAwake)} min</div></div>
+  </div>
+  ${tonightCard()}
+  ${dstCard()}
+  ${coachCard()}
+  <div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.42s">
+    <div class="row"><b>Schlafschuld</b><span class="num">${hm(m.debt)} · ${m.debt<300?"gering":m.debt<600?"mittel":"hoch"}</span></div>
+    <div class="track ${debtCls}"><i class="grow" style="width:0" data-w="${clamp(m.debt/900*100,2,100)}"></i></div>
+    <div class="ticks num"><span>0 h</span><span>5 h</span><span>10 h</span><span>15 h</span></div>
+    <p class="note">${m.debt>60?`Bei ${hm(m.need)} Bedarf. Mit ${m.debt>300?30:15} Minuten mehr Schlaf pro Nacht ist sie rechnerisch in etwa ${Math.ceil(m.debt/(m.debt>300?30:15))} Nächten weg.`:"Du bist ausgeschlafen. Jetzt zählt Regelmäßigkeit."}</p>
+  </div>
+  ${m.avgScore==null?"":`<div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.48s">
+    <div class="row"><b>Stufe: ${L.cur.n}</b><span class="num">Ø ${Math.round(m.avgScore)} → ${L.next.min} für „${L.next.n}“</span></div>
+    <div class="track"><i class="grow" style="width:0" data-w="${L.pct}"></i></div>
+    <div class="ticks num"><span>${L.cur.min}</span><span>${m.N.length} Nächte</span><span>${L.next.min}</span></div>
+    ${m.best.score!=null?`<p class="note">Deine beste Nacht: ${m.best.score} am ${fmtDate(m.best.date)} mit ${hm(m.best.total)} Schlaf. ${L.next!==L.cur?`Das zeigt, dass ${L.next.min}+ drin ist.`:""}</p>`:""}
+  </div>`}
+  <h2 class="sec fu" style="animation-delay:.5s">Was dir noch fehlt <small>nach Wirkung sortiert</small></h2>
+  <div class="stack">${top.length?top.map((f,i)=>`<div class="card liquid-glass lever fu" style="animation-delay:${.55+i*.08}s"><div class="icw">${ic(f.icon)}</div><div><h3>${f.name}: ${f.val}</h3><p>${f.do}</p></div></div>`).join(""):`<div class="card liquid-glass note">Keine großen Baustellen. Schau in „Faktoren“ nach dem Feinschliff.</div>`}</div>
+  <div class="btnrow fu" style="margin-top:20px;animation-delay:.8s"><button class="cta liquid-glass" data-tab="abend">Plan für heute Abend ${ic("arrow-right")}</button></div>
+  ${IN_CLAUDE?`<div class="card liquid-glass lever fu" style="margin-top:16px;animation-delay:.85s"><div class="icw">${ic("smartphone")}</div><div><h3>Nachtwerk aufs Handy</h3><p>Als App installieren und deine Daten mitnehmen.</p><div class="btnrow" style="margin-top:10px"><button class="pillbtn liquid-glass" data-open="handy">Aufs Handy übertragen</button></div></div></div>`:""}`;
+}
+
+function checkinCard(){
+  const h=new Date().getHours(), key=localKey(), d=diary()[key];
+  if((h<4||h>=17)&&!checkinDraft) return "";
+  if(d&&!checkinDraft) return `<div class="card liquid-glass fu" style="margin-top:16px;animation-delay:.2s"><div class="row"><b>Morgen-Check-in ✓</b><button class="link" data-act="checkin-edit">Ändern</button></div><p class="note">Erholt: ${d.r}/5${d.tags&&d.tags.length?" · "+d.tags.map(t=>TAGS.find(x=>x.id===t)?.t).filter(Boolean).join(", "):""}</p></div>`;
+  const cur=checkinDraft||d||{r:0,tags:autoTags(key)};
+  const lab=["","kaputt","müde","okay","gut","topfit"];
+  return `<div class="card liquid-glass fu" style="margin-top:16px;animation-delay:.2s" id="checkin">
+    <div class="row"><b>Wie erholt fühlst du dich?</b><span>30 Sekunden</span></div>
+    <div class="rate">${[1,2,3,4,5].map(i=>`<button class="${cur.r===i?"liquid-glass-selected":"liquid-glass"}" data-rate="${i}" aria-pressed="${cur.r===i}"><b>${i}</b>${lab[i]}</button>`).join("")}</div>
+    <p class="tiny">Was war gestern? Tippe alles an, was passt.</p>
+    <div class="tags">${TAGS.map(t=>`<button class="${cur.tags.includes(t.id)?"liquid-glass-selected":"liquid-glass"}" data-tag="${t.id}" aria-pressed="${cur.tags.includes(t.id)}">${ic(t.i)}${t.t}</button>`).join("")}</div>
+    <div class="btnrow"><button class="cta solid" data-act="checkin-save" ${cur.r?"":"disabled style=\"opacity:.5\""}>Speichern</button></div>
+    <p class="tiny">Aus deinen Antworten werden persönliche Experimente: Was hilft dir wirklich?</p>
+  </div>`;
+}
+let checkinDraft=null; // Entwurf, bis „Speichern“ getippt wird
+function autoTags(key){
+  // Vorbelegt: Routine gestartet (aus der App) und abends eingedöst (aus Oura)
+  const t=[];
+  if(store.get("nw_started",null)===key) t.push("routine");
+  if(M&&M.dozes.some(z=>z.date===key)) t.push("dose");
+  return t;
+}
+
+function weekLine(){
+  // Wochen-Trend zuerst lesen, nicht die einzelne Nacht
+  const N=M.N,w=N.slice(-7),p=N.slice(-14,-7);if(w.length<4) return "";
+  const a=avg(w.map(n=>n.total)),b=p.length>=4?avg(p.map(n=>n.total)):null,d=b==null?0:a-b;
+  const arrow=b==null||Math.abs(d)<10?"":d>0?ic("trending-up"):ic("trending-down");
+  return `<p class="tiny fu" style="animation-delay:.28s;display:flex;align-items:center;gap:6px;margin-top:12px">${arrow}<span>Letzte 7 Nächte: Ø ${hm(a)} Schlaf, Ø Wert ${Math.round(avg(w.map(n=>n.score)))}${b!=null&&Math.abs(d)>=10?`, ${d>0?"+":"−"}${Math.round(Math.abs(d))} min gegenüber der Woche davor`:""}. Der Trend zählt mehr als eine Nacht.</span></p>`;
+}
+function coachState(){
+  // Wochen-Coach nach KVT-I: das Schlaffenster folgt der Schlafeffizienz der letzten 7 Nächte
+  const w=M.week;if(w.n<5) return null;
+  const last=store.get("nw_coach",null), next=last?addDays(last,7):null, wait=next&&localKey()<next;
+  const se=w.se, pressure=(w.lat!=null&&w.lat<10)||w.dozes>0, lack=M.avgTotal<CFG.need-15;
+  let kind,t,b;
+  // Umgekehrte Schlafrestriktion: bei guter Effizienz und Zeichen von Schlafmangel das Fenster verlängern
+  if(se>=85&&(pressure||lack)){kind="plus";t="Schlaffenster 15 Minuten länger";b=`Deine Schlafeffizienz lag bei ${Math.round(se)} %. Du nutzt die Zeit im Bett also gut${pressure?`, und dein Körper zeigt Schlafdruck (${w.lat!=null&&w.lat<10?`Einschlafen in ${Math.round(w.lat)} Minuten`:`${w.dozes}× abends eingedöst`})`:""}. Zeit für mehr Schlaf: Licht aus 15 Minuten früher, Aufstehzeit bleibt. Anfangs kann das Einschlafen etwas länger dauern. Bis 20 Minuten ist das in Ordnung.`}
+  else if(se>=85){kind="hold";t="Dein Schlaffenster passt";b=`Schlafeffizienz ${Math.floor(se)} %, kein Zeichen von Schlafmangel. Halte die Zeiten. Fokus diese Woche: feste Aufstehzeit, auch am Wochenende.`}
+  else {kind="minus";t="Erst die Wachzeit senken";b=`Schlafeffizienz ${Math.floor(se)} %. Du liegst viel wach. Mehr Zeit im Bett würde das verstärken. Geh erst ins Bett, wenn du schläfrig bist. Steh nach dem Aufwachen gleich auf.${planTimes().tib-15>=TIB_MIN?" Hilft das nach einer Woche nicht, kürze dein Schlaffenster um 15 Minuten.":""}`}
+  // Kürzen erst, wenn die Wachzeit auch nach einer Woche mit den Regeln hoch bleibt
+  const since=store.get("nw_coach_minus",null);
+  if(kind==="minus"&&!since) store.set("nw_coach_minus",localKey());
+  if(kind!=="minus"&&since) store.del("nw_coach_minus");
+  const cut=kind==="minus"&&since&&localKey()>=addDays(since,7)&&planTimes().tib-15>=TIB_MIN;
+  return {kind,t,b,se,wait,next,cut};
+}
+function coachCard(){
+  const c=coachState();if(!c) return "";
+  const btn=c.wait?`<p class="tiny">Nächster Schritt ab ${fmtDate(c.next)}. Dein Körper braucht eine Woche, um sich einzustellen.</p>`
+    :c.kind==="plus"&&CFG.win<120?`<div class="btnrow"><button class="cta solid" data-coach="15">Übernehmen: Licht aus ${clock(planTimes().bed-15)}</button></div>`
+    :c.cut?`<div class="btnrow"><button class="pillbtn liquid-glass" data-coach="-15">Schlaffenster um 15 Minuten kürzen</button></div><p class="tiny">Ein kürzeres Schlaffenster macht in den ersten Wochen oft müder. Fahr nicht Auto und bediene keine Maschinen, wenn du schläfrig bist. Bei Schlafapnoe, Epilepsie, bipolarer Störung oder starker Tagesmüdigkeit: erst ärztlich abklären.</p>`:"";
+  return `<div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.4s">
+    <div class="cardhead"><h3>Wochen-Coach</h3><span>nach KVT-I · 7 Nächte</span></div>
+    <div class="row" style="margin-top:10px"><b>${c.t}</b></div>
+    <p class="note">${c.b}</p>${btn}
+  </div>`;
+}
+function dstChange(){
+  // Nächste Zeitumstellung in den kommenden 21 Tagen (Mittag zu Mittag verglichen)
+  const off=k=>new Date(k+"T12:00:00").getTimezoneOffset();let k=localKey();
+  for(let i=0;i<21;i++){const n=addDays(k,1);if(off(n)!==off(k))return {date:n,delta:off(k)-off(n)};k=n}
+  return null;
+}
+function dstCard(){
+  const c=dstChange();if(!c) return "";
+  const planned=store.get("nw_dst",null), {wake0:wake,bed}=planTimes();
+  const day=new Date(c.date+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"}), wd=new Date(c.date+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long"});
+  if(c.delta<0) return `<div class="card liquid-glass lever fu" style="margin-top:12px;animation-delay:.39s"><div class="icw">${ic("clock-3")}</div><div><h3>Uhr wird zurückgestellt: ${day}</h3>
+    <p>So wirst du ohne Mühe früher: Bleib bei deinem gewohnten Rhythmus. Die Uhr zeigt dann eine Stunde weniger an. Aus Aufstehen ${clock(wake)} wird ${clock(wake-60)}, aus Licht aus ${clock(bed)} wird ${clock(bed-60)}. Geh morgens gleich raus ins Licht, sonst rutscht die innere Uhr wieder nach hinten.</p>
+    ${store.get("nw_wake",null)==null&&!store.get("nw_shift",null)?`<p class="tiny">Nachtwerk rechnet ab dann automatisch so. Stell den Wecker am ${wd} auf ${clock(wake-60)} und geh ab ${wd}abend um ${clock(bed-60)} ins Bett.</p>`
+      :planned===c.date?`<p class="tiny">Ist eingeplant. Ab ${day} rückt dein Ziel eine Stunde mit.</p>`:`<div class="btnrow" style="margin-top:10px"><button class="pillbtn liquid-glass" data-act="dst-plan" data-date="${c.date}" data-delta="${c.delta}">Mein Ziel mitrücken</button></div>`}</div></div>`;
+  return `<div class="card liquid-glass lever fu" style="margin-top:12px;animation-delay:.39s"><div class="icw">${ic("clock-3")}</div><div><h3>Uhr wird vorgestellt: ${day}</h3>
+    <p>Die Nacht wird eine Stunde kürzer. Steh in den 4 Tagen davor jeden Tag 15 Minuten früher auf und geh 15 Minuten früher ins Bett. Hol dir morgens viel Licht.</p></div></div>`;
+}
+function applyDst(){
+  // Geplante Zeitumstellung: Eigene Ziele rücken einmalig mit, damit die Körperzeit gleich bleibt.
+  // Ohne eigenes Ziel folgt der Plan ohnehin den Nächten, die in Körperzeit gelesen werden.
+  const d=store.get("nw_dst",null);if(!d||localKey()<d) return;
+  if(new Date().getTimezoneOffset()===new Date(addDays(d,-1)+"T12:00:00").getTimezoneOffset()) return; // Uhr noch nicht umgestellt
+  const delta=store.get("nw_dst_delta",-60), w=store.get("nw_wake",null), sh=store.get("nw_shift",null);
+  if(w!=null) store.set("nw_wake",((w+delta)%1440+1440)%1440);
+  if(sh) store.set("nw_shift",{...sh,from:((sh.from+delta)%1440+1440)%1440,to:((sh.to+delta)%1440+1440)%1440});
+  store.del("nw_dst");store.del("nw_dst_delta");
+  M=build(DATA);if(w!=null||sh)toast("Zeitumstellung: dein Plan ist mitgerückt");
+}
+function tonightCard(){
+  const {bed,wake}=planTimes(), now=new Date(), nm=now.getHours()*60+now.getMinutes();
+  const nowB=nm<720?nm+1440:nm; // Minuten ab Mitternacht des Vortags (Abend-Sicht)
+  const toBed=bed-nowB, steps=planSteps(), next=steps.find(s=>s.t>nowB)||steps.find(s=>s.t+1440>nowB);
+  const day=nm>=300&&nm<1020; // 5 bis 17 Uhr: Tagessicht
+  return `<div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.38s">
+    <div class="cardhead"><h3>${day?"Heute Abend":"Heute Nacht"}</h3><span class="num">Licht aus ${clock(bed)} · Aufstehen ${clock(wake)}</span></div>
+    ${!day&&toBed>-60?`<div style="font-size:34px;font-weight:300;letter-spacing:-.04em;margin-top:12px" class="num">${toBed>0?"noch "+hm(toBed):"Zeit fürs Bett"}</div>`:""}
+    <p class="note">${next?`Als Nächstes um ${clock(next.t)}: <b style="font-weight:500;color:#fff">${next.b}</b>.`:"Schlaf gut."} ${day&&nm<bed-540&&next&&next.id!=="koffein"?`Letzter Kaffee bis ${clock(bed-540)}.`:""}</p>
+  </div>`;
+}
+
+/* --- Rhythmus --- */
+function chronoLabel(mid){
+  const h=((mid%1440)+1440)%1440/60;
+  // Faustregel, keine offizielle Einteilung: das MCTQ vergleicht eigentlich mit anderen Menschen
+  if(h<2.5) return ["eine Lerche","ein früher Typ"];
+  if(h<3.5) return ["eher eine Lerche","ein eher früher Typ"];
+  if(h<4.5) return ["ein Normaltyp","ein mittlerer Typ"];
+  if(h<5.5) return ["eher eine Eule","ein eher später Typ"];
+  if(h<6.5) return ["eine Eule","ein später Typ"];
+  return ["eine ausgeprägte Eule","ein sehr später Typ"];
+}
+function energyModel(){
+  // Zwei-Prozess-Modell (Borbély): Schlafdruck S steigt im Wachsein (τ 18,2 h) und fällt im Schlaf (τ 4,2 h).
+  // Die innere Uhr C ist eine Welle, deren Wach-Signal etwa 3 Stunden vor der gewohnten Einschlafzeit am stärksten ist,
+  // dazu eine 12-Stunden-Welle für das Tief etwa 8 Stunden nach dem Aufwachen.
+  const onset=M.onsetMean, wakeH=M.wakeMean;  // Minuten (onset ab Mitternacht Vortag, wake ab Mitternacht)
+  const sleepLen=((wakeH+1440)-onset);         // Minuten Schlafphase
+  const step=10, out=[];
+  let S=0.3;
+  // zwei Tage einschwingen, dann einen Tag ab Aufwachen aufzeichnen
+  const day=1440;
+  const asleep=t=>{const x=((t-onset)%day+day)%day;return x<sleepLen};
+  const start=onset+sleepLen; // Aufwachen (Minuten ab Mitternacht Vortag)
+  const C=t=>0.5*Math.cos(2*Math.PI*(t-(onset-180))/day)+0.2*Math.cos(4*Math.PI*(t-(start+120))/day);
+  for(let t=start-3*day;t<start+day;t+=step){
+    if(asleep(t)) S=S*Math.exp(-step/60/4.2); else S=1-(1-S)*Math.exp(-step/60/18.2);
+    if(t>=start){
+      const since=t-start, inertia=since<120?-0.55*Math.exp(-since/40):0;
+      out.push({t,S,C:C(t),e:C(t)-1.1*S+inertia,asleep:asleep(t)});
+    }
+  }
+  const awake=out.filter(p=>!p.asleep);
+  const lo=Math.min(...awake.map(p=>p.e)),hi=Math.max(...awake.map(p=>p.e));
+  out.forEach(p=>p.n=(p.e-lo)/(hi-lo||1));
+  return {pts:out,start,onset,sleepLen};
+}
+function chartEnergy(){
+  const {pts,start,onset}=energyModel(),W=320,H=150,pl=8,pr=8,pt=18,pb=22;
+  const end=start+1440, x=t=>pl+(t-start)/(end-start)*(W-pl-pr), y=v=>pt+(1-v)*(H-pt-pb);
+  const aw=pts.filter(p=>!p.asleep);
+  let d="";aw.forEach((p,i)=>d+=(i?"L":"M")+x(p.t).toFixed(1)+" "+y(p.n).toFixed(1));
+  const lastAw=aw[aw.length-1];
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Geschätzte Energie über den Tag"><defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6c873" stop-opacity=".45"/><stop offset="1" stop-color="#8c2440" stop-opacity="0"/></linearGradient></defs>`;
+  // Stundenraster
+  for(let k=0;k<=24;k+=6){const t=start+k*60;s+=`<line x1="${x(t)}" x2="${x(t)}" y1="${pt}" y2="${H-pb}" stroke="rgba(255,255,255,.06)"/><text x="${x(t)}" y="${H-6}" text-anchor="${k===0?"start":k===24?"end":"middle"}">${clock(t)}</text>`}
+  // Schlaf-Band
+  s+=`<rect x="${x(lastAw.t)}" y="${pt}" width="${W-pr-x(lastAw.t)}" height="${H-pt-pb}" fill="rgba(140,36,64,.25)" rx="6"/><text x="${(x(lastAw.t)+W-pr)/2}" y="${pt+12}" text-anchor="middle" style="fill:rgba(240,179,194,.8)">Schlaf</text>`;
+  // Wach-Zone vor dem Schlaf
+  const wz0=onset+1440-180,wz1=onset+1440-60;
+  s+=`<rect x="${x(wz0)}" y="${pt}" width="${x(wz1)-x(wz0)}" height="${H-pt-pb}" fill="rgba(230,200,115,.08)"/>`;
+  s+=`<path d="${d} L${x(lastAw.t)} ${H-pb} L${x(aw[0].t)} ${H-pb} Z" fill="url(#eg)"/><path d="${d}" fill="none" stroke="#f0b3c2" stroke-width="1.8" stroke-linejoin="round"/>`;
+  // Jetzt
+  const now=new Date(),nm=now.getHours()*60+now.getMinutes();let tn=nm;while(tn<start)tn+=1440;while(tn>=end)tn-=1440;
+  const pn=pts.reduce((a,b)=>Math.abs(b.t-tn)<Math.abs(a.t-tn)?b:a);
+  if(!pn.asleep) s+=`<line x1="${x(tn)}" x2="${x(tn)}" y1="${pt}" y2="${H-pb}" stroke="rgba(255,255,255,.5)" stroke-dasharray="2 3"/><circle cx="${x(tn)}" cy="${y(pn.n)}" r="4.5" fill="#fff"/><text x="${x(tn)}" y="${pt-5}" text-anchor="middle" style="fill:#fff">jetzt</text>`;
+  return s+"</svg>";
+}
+function energyMoments(){
+  const {pts,start,onset}=energyModel();const aw=pts.filter(p=>!p.asleep);
+  const find=(a,b,fn)=>{const seg=aw.filter(p=>p.t>=start+a*60&&p.t<=start+b*60);return seg.length?seg.reduce((x,y)=>fn(y.n,x.n)?y:x):null};
+  const awakeH=(onset+1440-start)/60, napBy=(onset<start?onset+1440:onset)-480; // Nickerchen spätestens 8 h vor dem Schlaftor
+  const peak1=find(1.5,6,(a,b)=>a>b), dip=find(4,10,(a,b)=>a<b), peak2=find(9,Math.max(9.5,awakeH-0.5),(a,b)=>a>b);
+  return [
+    {i:"sunrise",t:`${clock(start)} – ${clock(start+90)}`,b:"Schlafträgheit",s:"Der Kopf braucht etwas Zeit. Licht und Bewegung helfen, kein Grund zum Liegenbleiben."},
+    peak1&&{i:"zap",t:clock(peak1.t),b:"Erstes Hoch",s:"Gute Zeit für schwere Denkarbeit, Lernen und wichtige Gespräche."},
+    dip&&{i:"battery-low",t:clock(dip.t),b:"Tagestief",s:`Natürliches Tief. Kurz raus, Licht, Bewegung.${dip.t<napBy?` Brauchst du ein Nickerchen: höchstens 20 Minuten und vor ${clock(napBy)}, sonst fehlt am Abend der Schlafdruck.`:""}`},
+    peak2&&{i:"flame",t:clock(peak2.t),b:"Zweites Hoch",s:"Die innere Uhr hält dich jetzt aktiv wach. Darum fühlst du dich abends oft fit. Lass dich davon nicht täuschen. Bleib bei deiner Zeit für Licht aus."},
+    {i:"moon",t:clock(onset),b:"Dein Schlaftor",s:"Hier fällt das Wach-Signal ab und der Schlafdruck ist hoch. In dieser Zeit schläfst du am leichtesten ein."},
+  ].filter(Boolean);
+}
+function screenRhythmus(){
+  const m=M,[cName,cSub]=chronoLabel(m.chrono);
+  const pos=clamp(((((m.chrono%1440)+1440)%1440)/60-1.5)/(7.5-1.5)*100,2,98);
+  const sh=shiftPlan(), wakeNow=Math.round(m.wakeMean/15)*15, tgtWake=store.get("nw_wake",wakeNow);
+  return `${appbar()}
+  <p class="eyebrow fu" style="animation-delay:.1s">Deine innere Uhr</p>
+  <h1 class="title fu" style="animation-delay:.15s">Du bist <em>${cName}</em>.</h1>
+  <p class="lead fu" style="animation-delay:.2s">Deine Schlafmitte liegt im Schnitt bei ${clock(m.midAll)}${m.MSFsc!=null&&m.nFree>=2?`, am Wochenende korrigiert bei ${clock(m.MSFsc)}`:""}. Damit bist du ${cSub}. Wer gegen seinen Typ lebt, verliert Schlaf. Wer mit ihm plant, gewinnt Schlaf.</p>
+  <div class="card liquid-glass fu" style="margin-top:18px;animation-delay:.25s">
+    <div class="cardhead"><h3>Chronotyp</h3><span>Schlafmitte nach MCTQ</span></div>
+    <div style="position:relative;height:10px;border-radius:99px;margin-top:18px;background:linear-gradient(90deg,#e6c873,#d0607e 50%,#5e1428)"><i style="position:absolute;top:50%;left:${pos}%;width:16px;height:16px;border-radius:99px;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 0 4px rgba(255,255,255,.2)"></i></div>
+    <div class="ticks num"><span>Lerche 2:00</span><span>4:30</span><span>Eule 7:00</span></div>
+  </div>
+  <div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.32s">
+    <div class="cardhead"><h3>Deine Energie heute</h3><span>Modell aus deinen Zeiten</span></div>
+    ${chartEnergy()}
+    <div class="timeline" style="margin-top:6px">${energyMoments().map(e=>`<div class="tl"><span class="time num">${e.t.split(" ")[0]}</span><span class="rail"><i></i></span><span class="body"><b>${ic(e.i)}${e.b}</b><span>${e.s}</span></span></div>`).join("")}</div>
+    <p class="tiny">Grundlage ist das Zwei-Prozess-Modell der Schlafforschung: Schlafdruck baut sich im Wachsein auf, die innere Uhr gibt ein Wach-Signal, das am Abend am stärksten ist. Die Kurve ist eine Schätzung, kein Messwert.</p>
+  </div>
+  <h2 class="sec fu" style="animation-delay:.38s">Regelmäßigkeit</h2>
+  <div class="grid2 fu" style="animation-delay:.4s">
+    <div class="card liquid-glass stat"><div class="k">SRI</div><div class="v num">${m.sri??"–"}<small>/100</small></div><div class="d">${m.sri==null?"zu wenige Nächte":m.sri>=87?"sehr regelmäßig":m.sri>=80?"mittel":"unregelmäßig"}</div></div>
+    <div class="card liquid-glass stat"><div class="k">Pünktlich im Bett</div><div class="v num">${m.inWin}<small>/${Math.min(14,m.N.length)}</small></div><div class="d">Serie: ${m.streak} ${m.streak===1?"Nacht":"Nächte"} in Folge</div></div>
+    <div class="card liquid-glass stat"><div class="k">Sozialer Jetlag</div><div class="v num">${m.sjl!=null&&m.nFree>=2?hm(m.sjl):"–"}</div><div class="d">${m.sjl==null||m.nFree<2?"zu wenige Wochenenden":m.sjl<=30?"kaum":m.sjl<=60?"leicht":"deutlich"}</div></div>
+    <div class="card liquid-glass stat"><div class="k">Einschlafen</div><div class="v num">${clock(m.onsetMean)}</div><div class="d">± ${Math.round(m.bedSd)} min Streuung</div></div>
+  </div>
+  <h2 class="sec fu" style="animation-delay:.45s">Uhr sanft verschieben</h2>
+  ${dstCard()}
+  <div class="card liquid-glass fu" style="animation-delay:.48s">
+    <div class="tune"><div><div class="stat"><div class="k">Ziel: Aufstehen um</div></div><div class="tiny" style="margin-top:4px">Heute im Schnitt ${clock(wakeNow)}</div></div>
+      <div class="ctrl"><button class="liquid-glass" data-wake="-15" aria-label="15 Minuten früher">${ic("minus")}</button><b class="num">${clock(tgtWake)}</b><button class="liquid-glass" data-wake="15" aria-label="15 Minuten später">${ic("plus")}</button></div></div>
+    ${sh?`<p class="note">${sh.finished?`Geschafft: Du bist bei ${clock(sh.to)} angekommen. Halte die Zeit jetzt jeden Tag.`:`Schritt ${sh.done} von ${sh.steps}: heute Aufstehen ${clock(sh.today)}, Licht aus ${clock(planTimes().bed)}. Alle 3 Tage 15 Minuten weiter.`}</p><div class="btnrow"><button class="pillbtn liquid-glass" data-act="shift-stop">Verschieben beenden</button></div>`
+      :Math.abs(tgtWake-wakeNow)>=30?`<p class="note">Das sind ${hm(Math.abs(tgtWake-wakeNow))} ${tgtWake<wakeNow?"früher":"später"}. Am besten in Schritten: alle 3 Tage 15 Minuten, also etwa ${Math.ceil(Math.abs(tgtWake-wakeNow)/15)*3} Tage. ${tgtWake<wakeNow?"Dazu morgens sofort helles Licht und abends gedimmtes Licht.":""}</p><div class="btnrow"><button class="cta solid" data-act="shift-start">Sanft verschieben starten</button></div>`
+      :`<p class="note">Dein Abendplan richtet sich nach dieser Zeit. Willst du früher aufstehen, stell das Ziel früher. Nachtwerk plant dann kleine Schritte.</p>`}
+  </div>`;
+}
+
+/* --- Analyse --- */
+function chartScores(){
+  const N=M.N,W=320,H=150,pl=24,pb=18,bw=(W-pl)/N.length;
+  const y=v=>H-pb-(v-50)/(100-50)*(H-pb-8);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Schlafwert pro Nacht">`;
+  [60,70,85].forEach(v=>s+=`<line x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,${v===85?.35:.08})" ${v===85?'stroke-dasharray="3 3"':""}/><text x="0" y="${y(v)+3}">${v}</text>`);
+  N.forEach((n,i)=>{const sc=clamp(n.score||50,50,100);const x=pl+i*bw+bw*.18,h=y(50)-y(sc);const c=sc>=80?"#f0b3c2":sc>=70?"#b8506c":"#6e2238";
+    s+=`<rect x="${x}" y="${y(sc)}" width="${bw*.64}" height="${h}" rx="2" fill="${c}"><title>${fmtDate(n.date)}: ${n.score}</title></rect>`});
+  [0,Math.floor(N.length/2),N.length-1].forEach(i=>s+=`<text x="${pl+i*bw+bw/2}" y="${H-4}" text-anchor="middle">${fmtDate(N[i].date)}</text>`);
+  s+=`<text x="${W}" y="${y(85)-4}" text-anchor="end" style="fill:#f0b3c2">Ziel 85</text></svg>`;return s;
+}
+function chartDebt(){
+  const N=M.N.slice(-14),W=320,H=130,pl=28,pb=18,bw=(W-pl)/N.length,need=M.need;
+  const vals=N.map(n=>n.total-need),mx=Math.max(90,...vals.map(Math.abs));
+  const y=v=>(H-pb)/2+4-v/mx*((H-pb)/2-6);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Schlaf über oder unter deinem Bedarf">`;
+  s+=`<line x1="${pl}" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="rgba(255,255,255,.3)"/><text x="0" y="${y(0)+3}">Bedarf</text>`;
+  [60,-60].forEach(v=>s+=`<line x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,.07)"/><text x="0" y="${y(v)+3}">${v>0?"+1h":"−1h"}</text>`);
+  N.forEach((n,i)=>{const v=vals[i],x=pl+i*bw+bw*.2;s+=`<rect x="${x}" y="${Math.min(y(0),y(v))}" width="${bw*.6}" height="${Math.max(1,Math.abs(y(v)-y(0)))}" rx="2" fill="${v>=0?"#9fe0b8":"#d0607e"}"><title>${fmtDate(n.date)}: ${v>=0?"+":""}${Math.round(v)} min</title></rect>`});
+  [0,N.length-1].forEach(i=>s+=`<text x="${pl+i*bw+bw/2}" y="${H-4}" text-anchor="middle">${fmtDate(N[i].date)}</text>`);
+  return s+"</svg>";
+}
+function chartStages(){
+  const N=M.N.slice(-14),W=320,H=160,pl=24,pb=18,max=600,bw=(W-pl)/N.length;
+  const y=v=>(H-pb)-v/max*(H-pb-6);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Schlafphasen der letzten 14 Nächte">`;
+  [180,300,M.need].forEach(v=>s+=`<line x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,${v===M.need?.3:.08})" ${v===M.need?'stroke-dasharray="3 3"':""}/><text x="0" y="${y(v)+3}">${v===M.need?"":v/60+"h"}</text>`);
+  N.forEach((n,i)=>{let acc=0;const x=pl+i*bw+bw*.15;
+    [["deep","#8c2440"],["rem","#d0607e"],["light","#f0b3c2"],["awake","rgba(255,255,255,.22)"]].forEach(([k,c])=>{const v=n[k]||0;s+=`<rect x="${x}" y="${y(acc+v)}" width="${bw*.7}" height="${Math.max(0,y(acc)-y(acc+v)-1)}" fill="${c}"><title>${fmtDate(n.date)} ${k}: ${v} min</title></rect>`;acc+=v});});
+  [0,N.length-1].forEach(i=>s+=`<text x="${pl+i*bw+bw/2}" y="${H-4}" text-anchor="middle">${fmtDate(N[i].date)}</text>`);
+  s+=`<text x="${W}" y="${y(M.need)-4}" text-anchor="end" style="fill:#f0b3c2">Bedarf ${hm(M.need)}</text></svg>`;return s;
+}
+function chartBed(){
+  const N=M.N,W=320,H=170,pl=34,pb=18;
+  const allB=[...N.map(n=>bedMin(n.start)),...M.dozes.map(z=>bedMin(z.start)),planTimes().bed];
+  const lo=Math.floor((Math.min(...allB)-30)/60)*60, hi=Math.ceil((Math.max(...allB)+30)/60)*60;
+  const y=v=>8+(v-lo)/(hi-lo)*(H-pb-8),bw=(W-pl)/N.length,x=i=>pl+i*bw+bw/2, tg=planTimes().bed;
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Einschlafzeiten">`;
+  s+=`<rect x="${pl}" y="${y(tg-30)}" width="${W-pl}" height="${y(tg+30)-y(tg-30)}" fill="rgba(240,179,194,.1)"/>`;
+  for(let v=lo;v<=hi;v+=60)s+=`<line x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,.07)"/><text x="0" y="${y(v)+3}">${clock(v)}</text>`;
+  M.dozes.forEach(z=>{const i=N.findIndex(n=>n.date===z.date);if(i>=0)s+=`<circle cx="${x(i)}" cy="${y(bedMin(z.start))}" r="3.2" fill="none" stroke="#e6c873" stroke-width="1.4"><title>Eingedöst ${fmtDate(z.date)} ${clock(minOfDay(z.start))}, ${z.total} min</title></circle>`});
+  let p="";N.forEach((n,i)=>p+=(i?"L":"M")+x(i)+" "+y(bedMin(n.start)));
+  s+=`<path d="${p}" fill="none" stroke="rgba(240,179,194,.35)" stroke-width="1"/>`;
+  N.forEach((n,i)=>s+=`<circle cx="${x(i)}" cy="${y(bedMin(n.start))}" r="3.4" fill="${n.score>=78?"#f0b3c2":n.score>=70?"#b8506c":"#ff9aa8"}"><title>${fmtDate(n.date)}: ins Bett ${clock(minOfDay(n.start))}, Wert ${n.score}</title></circle>`);
+  [0,N.length-1].forEach(i=>s+=`<text x="${x(i)}" y="${H-4}" text-anchor="middle">${fmtDate(N[i].date)}</text>`);
+  return s+"</svg>";
+}
+function chartHrv(){
+  const N=M.N.filter(n=>n.hrv),W=320,H=110,pl=24,pb=16;
+  if(N.length<3) return `<p class="note">Zu wenige HRV-Werte.</p>`;
+  const lo=Math.floor(Math.min(...N.map(n=>n.hrv))/20)*20,hi=Math.ceil(Math.max(...N.map(n=>n.hrv))/20)*20||lo+20;
+  const x=i=>pl+i*(W-pl-6)/(N.length-1),y=v=>6+(hi-v)/(hi-lo||1)*(H-pb-6);
+  let p="";N.forEach((n,i)=>p+=(i?"L":"M")+x(i).toFixed(1)+" "+y(n.hrv).toFixed(1));
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="HRV-Verlauf"><defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0b3c2" stop-opacity=".35"/><stop offset="1" stop-color="#f0b3c2" stop-opacity="0"/></linearGradient></defs>`;
+  [lo,(lo+hi)/2,hi].forEach(v=>s+=`<line x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,.07)"/><text x="0" y="${y(v)+3}">${v}</text>`);
+  s+=`<path d="${p} L${x(N.length-1)} ${H-pb} L${x(0)} ${H-pb} Z" fill="url(#hg)"/><path d="${p}" fill="none" stroke="#f0b3c2" stroke-width="1.6" stroke-linejoin="round"/>`;
+  const e=N[N.length-1];s+=`<circle cx="${x(N.length-1)}" cy="${y(e.hrv)}" r="4" fill="#fff"/><text x="${x(N.length-1)-6}" y="${y(e.hrv)-8}" text-anchor="end" style="fill:#fff">${e.hrv} ms</text>`;
+  return s+"</svg>";
+}
+function screenAnalyse(){
+  const m=M;
+  const lowHrv=m.N.filter(n=>n.hrv).reduce((a,b)=>!a||b.hrv<a.hrv?b:a,null);
+  return `${appbar()}
+  <p class="eyebrow fu" style="animation-delay:.1s">Letzte ${m.N.length} Nächte</p>
+  <h1 class="title fu" style="animation-delay:.15s">Deine Muster</h1>
+  ${srcLine()}
+  <div class="card liquid-glass fu" style="margin-top:18px;animation-delay:.25s">
+    <div class="cardhead"><h3>Schlafwert</h3><span class="num">${m.avgScore!=null?`Ø ${Math.round(m.avgScore)} · bester ${m.best.score??"–"}`:""}</span></div>
+    ${chartScores()}
+    <p class="note">${m.N.filter(n=>n.score>=80).length} von ${m.N.length} Nächten lagen bei 80 oder mehr. Die gestrichelte Linie ist dein Ziel.${m.midAll>1440+180?` Gut zu wissen: Beim Baustein „Timing“ sieht Oura die Schlafmitte am liebsten zwischen 0 und 3 Uhr, je nach Typ etwas später. Deine liegt bei ${clock(m.midAll)}. Darum kann dein Wert etwas niedriger ausfallen, als dein Schlaf eigentlich ist.`:""}</p>
+  </div>
+  <div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.3s">
+    <div class="cardhead"><h3>Schlaf gegenüber Bedarf</h3><span class="num">Schuld ${hm(m.debt)}</span></div>
+    ${chartDebt()}
+    <p class="note">${m.N.slice(-14).filter(n=>n.total>=m.need).length} von ${m.N.slice(-14).length} Nächten haben deinen Bedarf von ${hm(m.need)} erreicht. Den Bedarf stellst du im Menü ein.</p>
+  </div>
+  <div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.35s">
+    <div class="cardhead"><h3>Einschlafzeit</h3><span class="num">Ø ${clock(m.bedMean)} · ± ${Math.round(m.bedSd)} min</span></div>
+    ${chartBed()}
+    <div class="legend"><span><i style="background:#f0b3c2;border-radius:99px"></i>Nacht, Farbe = Wert</span><span><i style="border:1.4px solid #e6c873;border-radius:99px;background:none"></i>abends eingedöst</span><span><i style="background:rgba(240,179,194,.25)"></i>Ziel ${clock(planTimes().bed)} ±30 min</span></div>
+    ${m.nLate>=3?`<p class="note">Späte Nächte (mehr als 20 Minuten nach deinem Schnitt): Ø ${Math.round(m.scoreLate)} Punkte. Pünktliche: Ø ${Math.round(m.scoreEarly)}. Teilweise liegt das an Ouras Timing-Wertung, die späte Nächte abwertet.</p>`:""}
+  </div>
+  <div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.42s">
+    <div class="cardhead"><h3>Schlafphasen</h3><span>letzte 14 Nächte</span></div>
+    ${chartStages()}
+    <div class="legend"><span><i style="background:#8c2440"></i>Tief Ø ${Math.round(m.avgDeep)}</span><span><i style="background:#d0607e"></i>REM Ø ${Math.round(m.avgRem)}</span><span><i style="background:#f0b3c2"></i>Leicht Ø ${Math.round(m.avgLight)}</span><span><i style="background:rgba(255,255,255,.3)"></i>Wach Ø ${Math.round(m.avgAwake)} min</span></div>
+    <p class="note">Tiefschlaf ${Math.round(m.share.deep*100)} %, REM ${Math.round(m.share.rem*100)} % deines Schlafs. Der Ring schätzt Phasen gut, aber nicht so genau wie ein Schlaflabor. Achte auf Trends, nicht auf einzelne Nächte.</p>
+  </div>
+  <div class="card liquid-glass fu" style="margin-top:12px;animation-delay:.5s">
+    <div class="cardhead"><h3>HRV nachts</h3><span class="num">Ø ${m.avgHrv?Math.round(m.avgHrv):"–"} ms</span></div>
+    ${chartHrv()}
+    ${lowHrv?`<p class="note">Vergleiche nur mit dir selbst. Dein niedrigster Wert war am ${fmtDate(lowHrv.date)} mit ${lowHrv.hrv} ms. An solchen Tagen lieber ruhiger und früher ins Bett.</p>`:""}
+  </div>`;
+}
+
+/* --- Faktoren --- */
+const KNOW=[
+  {i:"orbit",t:"Zwei Kräfte steuern deinen Schlaf",b:"<p>Der <b>Schlafdruck</b> (Adenosin) baut sich auf, solange du wach bist, und wird im Schlaf abgebaut. Die <b>innere Uhr</b> sendet tagsüber ein Wach-Signal, das am Abend am stärksten ist und dann abfällt.</p><p>Du schläfst am besten ein, wenn der Druck hoch ist und das Signal fällt. Darum schadet Eindösen am Abend: Es baut Druck ab, der dir später beim Einschlafen und für den Tiefschlaf fehlt.</p>",src:"Borbély 1982; Daan, Beersma & Borbély 1984"},
+  {i:"bed",t:"Die wirksamste Methode: KVT-I",b:"<p>Die kognitive Verhaltenstherapie bei Insomnie (KVT-I) ist laut deutscher S3-Leitlinie 2025 und US-Leitlinie die erste Wahl, vor Tabletten. Schlafhygiene allein hilft bei Insomnie kaum.</p><p>Wichtige Regeln: 1. Nur ins Bett, wenn du schläfrig bist. 2. Das Bett nur für Schlaf und Sex. 3. Nach etwa 20 Minuten wach: aufstehen, bei schwachem Licht etwas Ruhiges tun, zurück, wenn du schläfrig bist. 4. Jeden Tag zur gleichen Zeit aufstehen. 5. Nicht länger im Bett liegen, als du schläfst.</p><p>Der Wochen-Coach auf „Heute“ passt dein Schlaffenster jede Woche an deine Schlafeffizienz an. Das Schlaffenster ist die Zeit von Licht aus bis Aufstehen.</p>",src:"S3-Leitlinie Insomnie 2025 (AWMF 063-003); Edinger et al. 2021 (AASM)"},
+  {i:"sunrise",t:"Licht ist der Taktgeber",b:"<p>Helles Licht am Morgen stellt die Uhr früher, helles Licht am Abend stellt sie später. Draußen sind es selbst bei Wolken meist über 1.000 Lux, drinnen oft nur 100 bis 500.</p><p>Darum: in der ersten Stunde nach dem Aufstehen 15 bis 30 Minuten raus. Ab 3 Stunden vor dem Schlafengehen nur noch schwaches, warmes Licht, etwa wie eine kleine Tischlampe. Im Schlafzimmer so dunkel wie möglich.</p>",src:"Brown et al. 2022, PLoS Biology"},
+  {i:"calendar-clock",t:"Regelmäßigkeit ist ein eigener Faktor",b:"<p>Feste Zeiten stabilisieren die innere Uhr. In der UK-Biobank-Studie mit über 60.000 Menschen hing regelmäßiger Schlaf stärker mit einem geringeren Sterberisiko zusammen als die Schlafdauer.</p><p>Der wichtigste Anker ist die <b>Aufstehzeit</b>, an allen 7 Tagen, höchstens ±15 Minuten.</p>",src:"Windred et al. 2024, SLEEP; Phillips et al. 2017"},
+  {i:"sun-moon",t:"Eule? Du kannst deine Uhr verschieben",b:"<p>In einer kleinen Studie mit 22 Menschen stellten späte Typen ihre Uhr in 3 Wochen um etwa 2 Stunden früher, ohne weniger zu schlafen. Das Rezept: feste Zeiten an allen Tagen, viel Licht am Morgen, wenig Licht am Abend, früh frühstücken, Abendessen nicht zu spät.</p><p>Sanft geht es mit 15 Minuten alle 3 Tage. Immer zuerst die Aufstehzeit verschieben. Das macht der Bereich „Rhythmus“ für dich.</p>",src:"Facer-Childs et al. 2019, Sleep Medicine"},
+  {i:"coffee",t:"Koffein wirkt länger, als du denkst",b:"<p>Die Hälfte des Koffeins ist nach etwa 4 Stunden abgebaut, bei manchen erst nach 8. Eine Auswertung von 24 Studien rät bei einer normalen Tasse Kaffee (etwa 100 mg) zu knapp 9 Stunden Abstand zum Schlafen. Stärkere Getränke brauchen länger.</p><p>In einem Versuch kostete eine hohe Dosis Koffein (400 mg, etwa 4 Tassen Kaffee) 6 Stunden vor dem Schlafen über eine Stunde Schlaf. Die Leute merkten es nicht.</p>",src:"Gardiner et al. 2023; Drake et al. 2013"},
+  {i:"wine",t:"Alkohol stiehlt die zweite Nachthälfte",b:"<p>Alkohol macht müde, aber er unterdrückt REM-Schlaf, erhöht den Puls in der Nacht und senkt die HRV. In einer großen Studie mit über 4.000 Menschen veränderten schon kleine Mengen, etwa ein Bier, Puls und HRV in den ersten drei Schlafstunden. Ab etwa zwei Gläsern sinkt der REM-Schlaf deutlich.</p><p>Am besten keinen Alkohol, sonst mindestens 4 Stunden vor dem Schlafen aufhören.</p>",src:"Gardiner et al. 2025; Pietilä et al. 2018"},
+  {i:"thermometer",t:"Kühl schläft es sich besser",b:"<p>Zum Einschlafen sinkt die Körpertemperatur. Für das Schlafzimmer gelten 16 bis 19 °C als guter Richtwert. Es klingt paradox, ist aber gut belegt: Eine warme Dusche oder ein Bad mit 40 bis 42 °C, 1 bis 2 Stunden vor dem Schlafengehen, lässt dich schneller einschlafen, weil der Körper danach Wärme abgibt.</p>",src:"Haghayegh et al. 2019, Metaanalyse"},
+  {i:"notebook-pen",t:"Gedanken aus dem Kopf aufs Papier",b:"<p>In einer Studie mit 57 jungen Erwachsenen schliefen alle, die vor dem Schlafen 5 Minuten eine konkrete To-do-Liste für morgen schrieben, im Schlaflabor etwa 9 Minuten schneller ein als Menschen, die über Erledigtes schrieben. Je konkreter die Liste, desto besser.</p><p>Bei Sorgen kann eine feste Grübelzeit am frühen Abend helfen: Sorge in eine Spalte, den nächsten kleinen Schritt in die andere. Kommt sie im Bett wieder: „Steht schon im Buch.“</p>",src:"Scullin et al. 2018; Carney & Waters 2006"},
+  {i:"wind",t:"Langsam atmen beruhigt",b:"<p>Langsames Atmen mit etwa 6 Atemzügen pro Minute (4 Sekunden ein, 6 aus) beruhigt das Nervensystem. In einer kleinen Schlaflabor-Studie schliefen Menschen mit Schlafproblemen nach 20 Minuten davon schneller ein.</p><p>Zyklisches Seufzen hob in einer Studie die Stimmung stärker als Achtsamkeit. Auf den Schlaf wurde das Seufzen nicht untersucht. Die 4-7-8-Atmung ist beliebt, aber kaum untersucht.</p>",src:"Tsai et al. 2015; Balban et al. 2023"},
+  {i:"gauge",t:"Werte sind Hinweise, keine Noten",b:"<p>Der Ring erkennt Schlaf sehr gut, Wachphasen schlechter. Bei den Phasen leicht, tief und REM stimmt er in Studien zu etwa 80 % mit dem Schlaflabor überein. Einzelne Nächte schwanken also. Wochen-Trends sind verlässlicher.</p><p>Wer sich zu sehr auf die Zahl fixiert, kann dadurch schlechter schlafen. Fachleute nennen das Orthosomnie. Achte auf die Richtung, nicht auf den Einzelwert.</p>",src:"Altini & Kinnunen 2021; Robbins et al. 2024; Baron et al. 2017"},
+  {i:"triangle-alert",t:"Wann du ärztlichen Rat brauchst",b:"<p>Lass dich untersuchen, wenn du an mindestens 3 Nächten pro Woche über 3 Monate schlecht schläfst und tagsüber darunter leidest. Ebenso bei lautem Schnarchen mit Atemaussetzern, bei starker Tagesmüdigkeit trotz genug Schlaf oder bei unruhigen Beinen am Abend. Auch, wenn du länger als 4 Wochen Schlaftabletten nimmst.</p><p><b>Sofort:</b> Wirst du am Steuer müde oder nickst fast ein, halte an und lass das ärztlich abklären. Hast du Gedanken, dir etwas anzutun, ruf sofort die 112 oder die Telefonseelsorge an: 0800 111 0 111.</p><p>Erste Anlaufstelle ist die Hausarztpraxis. Für Ein- und Durchschlafstörungen (Insomnie) gibt es KVT-I als App auf Rezept (DiGA, zum Beispiel somnio, HelloBetter Schlafen oder somnovia), für gesetzlich Versicherte kostenlos.</p>",src:"DGSM; S3-Leitlinie Insomnie 2025; DiGA-Verzeichnis"},
+];
+function screenFaktoren(){
+  const groups={alle:"Alle",schlaf:"Schlaf",rhythmus:"Rhythmus",koerper:"Körper",tag:"Tag"};
+  const F=M.factors.filter(f=>factorFilter==="alle"||f.group===factorFilter);
+  const order={bad:0,ok:1,good:2,info:3};F.sort((a,b)=>order[a.status]-order[b.status]||b.w-a.w);
+  const label={good:"Stark",ok:"Okay",bad:"Baustelle",info:"Info"};
+  const cnt=s=>M.factors.filter(f=>f.status===s).length;
+  const E=M.exp;
+  return `${appbar()}
+  <p class="eyebrow fu" style="animation-delay:.1s">Was in deinen Schlaf hineinspielt</p>
+  <h1 class="title fu" style="animation-delay:.15s">${cnt("good")} stark, ${cnt("ok")} okay, ${cnt("bad")} ${cnt("bad")===1?"Baustelle":"Baustellen"}</h1>
+  <p class="lead fu" style="animation-delay:.2s">Jeder Faktor stammt aus deinen Oura-Daten. Oben steht, was dir am meisten bringt.</p>
+  <div class="filters fu" style="margin-top:16px;animation-delay:.25s">${Object.entries(groups).map(([k,v])=>`<button class="${factorFilter===k?"liquid-glass-selected":"liquid-glass"}" data-filter="${k}">${v}</button>`).join("")}</div>
+  <div class="factors">${F.map((f,i)=>`<div class="factor liquid-glass fu" style="animation-delay:${.3+i*.04}s">
+    <div class="top"><div class="name">${ic(f.icon)}${f.name}</div><span class="chip ${f.status}">${label[f.status]}</span></div>
+    <div class="val num">${f.val}<small>${f.unit}</small></div>
+    <div class="why">${f.why}</div><div class="do">→ ${f.do}</div></div>`).join("")}</div>
+  <h2 class="sec">Deine Experimente <small>aus dem Morgen-Check-in</small></h2>
+  ${E.res.length?`<div class="stack">${E.res.sort((a,b)=>Math.abs(b.ds)-Math.abs(a.ds)).map(r=>`<div class="factor liquid-glass">
+      <div class="top"><div class="name">${ic(r.tg.i)}${r.tg.t}</div><span class="chip ${r.sure?(r.ds<=-2?"bad":r.ds>=2?"good":"info"):"info"}">${r.sure?"Hinweis":"erste Tendenz"}</span></div>
+      <div class="val num">${r.ds>=0?"+":""}${r.ds.toFixed(1)}<small>Punkte Schlafwert</small></div>
+      <div class="why">Schlaf ${r.dt>=0?"+":"−"}${Math.abs(Math.round(r.dt))} min · Tiefschlaf ${r.dd>=0?"+":"−"}${Math.abs(Math.round(r.dd))} min${isNaN(r.dh)?"":` · HRV ${r.dh>=0?"+":""}${Math.round(r.dh)} ms`}. ${r.ny} Nächte mit, ${r.nn} ohne.</div></div>`).join("")}</div>
+    <p class="tiny">Vergleich deiner Nächte mit und ohne Merkmal. Ab je 5 Nächten ein Hinweis, kein Beweis. Ein Schlafwert schwankt von Nacht zu Nacht um einige Punkte. Kleine Unterschiede sind darum oft Zufall.</p>`
+  :`<div class="card liquid-glass"><p class="note" style="margin:0">Mach morgens den Check-in auf „Heute“. Nach je 3 Nächten mit und ohne ein Merkmal siehst du hier, was <b style="font-weight:500;color:#fff">dir</b> wirklich hilft oder schadet. Bisher: ${E.count} Check-ins.</p></div>`}
+  <h2 class="sec">Wissen aus der Schlafforschung</h2>
+  <div class="stack">${KNOW.map(k=>`<details class="know liquid-glass"><summary>${ic(k.i)}${k.t}${ic("chevron-down","chev")}</summary><div class="kb">${k.b}<div class="src">Quelle: ${k.src}</div></div></details>`).join("")}</div>`;
+}
+
+/* --- Abend --- */
+const TOOLS=[
+  {id:"resonanz",i:"activity",b:"Ruhe-Atmung",s:"4 ein, 6 aus. 10 Minuten. Am besten untersucht."},
+  {id:"seufzer",i:"waves",b:"Zyklisches Seufzen",s:"Zweimal ein, lang aus. 5 Minuten."},
+  {id:"478",i:"wind",b:"4-7-8 Atmung",s:"4 ein, 7 halten, 8 aus. 4 Runden."},
+  {id:"scan",i:"person-standing",b:"Body-Scan",s:"Von Kopf bis Fuß loslassen. 6 Minuten."},
+  {id:"parken",i:"notebook-pen",b:"Gedanken parken",s:"To-dos und Sorgen aufschreiben."},
+  {id:"shuffle",i:"shuffle",b:"Kognitives Shuffeln",s:"Zufällige Bilder statt Grübeln."},
+];
+function screenAbend(){
+  const {wake,bed,shift}=planTimes();
+  const goals=store.get("nw_goals",null)||defaultGoals();
+  const nk=nightKeyEvening();
+  const done=store.get("nw_done_"+nk,[]);
+  const started=store.get("nw_started",null)===nk;
+  const S=planSteps(), now=new Date(), nm=now.getHours()*60+now.getMinutes(), nowB=nm<720?nm+1440:nm;
+  const nextId=(S.find(s=>s.t>nowB-30&&!done.includes(s.id))||{}).id; // gerade fälliger oder nächster offener Schritt
+  return `${appbar()}
+  <p class="eyebrow fu" style="animation-delay:.1s">Wähle, woran du arbeiten willst</p>
+  <h1 class="title fu" style="animation-delay:.15s;font-size:28px">Was soll dein Schlaf als Nächstes können?</h1>
+  <div class="goals" style="margin-top:22px">${GOALS.map((g,i)=>`<button class="goal ${goals.includes(g.id)?"liquid-glass-selected":"liquid-glass"} fu" style="animation-delay:${.25+i*.08}s" data-goal="${g.id}" aria-pressed="${goals.includes(g.id)}"><span class="n">0${i+1}</span><span class="t">${g.t}</span></button>`).join("")}</div>
+  <p class="note fu" style="animation-delay:.55s">Vorausgewählt sind deine größten Baustellen laut Oura. Der Plan passt sich an.</p>
+
+  <h2 class="sec fu" style="animation-delay:.6s">Dein Abend <small>${shift&&!shift.finished?"Schritt "+shift.done+" von "+shift.steps:""}</small></h2>
+  <div class="card liquid-glass tune fu" style="animation-delay:.62s">
+    <div><div class="stat"><div class="k">Aufstehen um</div></div><div class="tiny" style="margin-top:4px">Licht aus dann um <b class="num" style="color:var(--rose);font-weight:500">${clock(bed)}</b></div></div>
+    <div class="ctrl"><button class="liquid-glass" data-wake="-15" aria-label="15 Minuten früher">${ic("minus")}</button><b class="num">${clock(wake)}</b><button class="liquid-glass" data-wake="15" aria-label="15 Minuten später">${ic("plus")}</button></div>
+  </div>
+  <div class="timeline fu" style="animation-delay:.7s">${S.map(s=>`<button class="tl ${done.includes(s.id)?"done":""} ${s.id===nextId?"now":""}" data-step="${s.id}" aria-pressed="${done.includes(s.id)}"><span class="time num">${clock(s.t)}</span><span class="rail"><i></i></span><span class="body"><b>${ic(s.i)}${s.b}</b><span>${s.s}</span></span></button>`).join("")}</div>
+
+  <div class="voice fu" style="animation-delay:.8s"><div class="glow"><button class="liquid-glass" data-tool="resonanz" aria-label="Ruhe-Atmung starten">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><line x1="5" y1="10" x2="5" y2="16"/><line x1="9" y1="6" x2="9" y2="20"/><line x1="13" y1="3" x2="13" y2="23"/><line x1="17" y1="7" x2="17" y2="19"/><line x1="21" y1="11" x2="21" y2="15"/></svg></button></div>
+    <div class="lab">Ruhe-Atmung zum Einschlafen</div></div>
+
+  <div class="slider liquid-glass fu ${started?"done":""}" id="slider" style="animation-delay:.85s">
+    <div class="thumb" id="thumb" role="button" aria-label="${started?"Abendroutine läuft":"Abendroutine starten"}" tabindex="0">${ic(started?"check":"arrow-right")}</div>
+    <div class="label">${started?"Abendmodus an. Schlaf gut.":"Abendroutine starten"}</div>
+    <div class="chev">${started?"":`<span style="color:rgba(255,255,255,.4)">${ic("chevron-right")}</span><span style="color:rgba(255,255,255,.5)">${ic("chevron-right")}</span><span style="color:rgba(255,255,255,.6)">${ic("chevron-right")}</span>`}</div>
+  </div>
+  <p class="tiny" style="text-align:center">${done.length} von ${S.length} Schritten erledigt. Tippe einen Schritt an, um ihn abzuhaken. Starten schaltet den warmen Nachtfilter ein.</p>
+  ${IN_CLAUDE?"":`<div class="card liquid-glass lever" style="margin-top:14px"><div class="icw">${ic("alarm-clock")}</div><div><h3>Erinnerungen im Kalender</h3><p>Eine Web-App kann von allein keine Wecker stellen. Dein Kalender schon: täglich Letzter Kaffee, Licht dimmen, Gedanken parken und Licht aus${M&&M.dozes.length>=3?", dazu ein Sofa-Wächter":""}.</p><div class="btnrow" style="margin-top:10px"><button class="pillbtn liquid-glass" data-act="ics">Kalender-Datei laden</button></div><p class="tiny">Nach einer Änderung deiner Zeiten die Datei neu laden und die alten Termine löschen.</p></div></div>`}
+
+  <h2 class="sec">Werkzeuge für die Nacht</h2>
+  <div class="tools">${TOOLS.map(t=>`<button class="tool liquid-glass" data-tool="${t.id}">${ic(t.i)}<b>${t.b}</b><span>${t.s}</span></button>`).join("")}
+    <button class="tool liquid-glass wide" data-tool="wach">${ic("cloud-moon")}<div><b>Nachts aufgewacht?</b><span>Dunkler Bildschirm, ruhige Schritte, keine Uhr.</span></div></button>
+  </div>`;
+}
+
+/* ===== Overlays ===== */
+let ovTimer=null, ovKind=null;
+function openOv(kind){
+  clearTimers();ovKind=kind;
+  const ov=$("#ov");ov.className="ov";ov.innerHTML=OV[kind]();ov.classList.add("open");ov.setAttribute("aria-hidden","false");
+  if(kind==="wach") ov.classList.add("wake-ov");
+  const f=ov.querySelector("[data-autofocus]");if(f)setTimeout(()=>f.focus(),300);
+  if(OVINIT[kind]) OVINIT[kind]();
+}
+function closeOv(){clearTimers();ovKind=null;const ov=$("#ov");ov.classList.remove("open");ov.setAttribute("aria-hidden","true");setTimeout(()=>{if(!ovKind)ov.innerHTML=""},400)}
+function clearTimers(){clearTimeout(ovTimer);clearInterval(ovTimer);releaseWake()}
+let wakeLock=null;
+async function holdWake(){try{wakeLock=await navigator.wakeLock?.request("screen")}catch(e){}}
+function releaseWake(){try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null}
+const head=(t,extra="")=>`<div class="ovhead"><h2>${t}</h2><div style="display:flex;gap:8px">${extra}<button class="circle-btn liquid-glass" data-act="close" aria-label="Schließen">${ic("x")}</button></div></div>`;
+
+const BREATH={
+  "478":{t:"4-7-8 Atmung",seq:[["Einatmen durch die Nase",4,1.15],["Halten",7,1.15],["Ausatmen durch den Mund",8,.6]],rounds:4,intro:"Zunge hinter die oberen Schneidezähne. 4 Runden. Wird dir schwindlig, atme normal weiter."},
+  "seufzer":{t:"Zyklisches Seufzen",seq:[["Tief einatmen",2.5,1.05],["Noch ein kurzer Atemzug",1,1.18],["Langsam ganz aus",6,.6]],rounds:32,intro:"Zweimal durch die Nase ein, dann lange durch den Mund aus. Etwa 5 Minuten. Wird dir schwindlig, atme normal weiter."},
+  "resonanz":{t:"Ruhe-Atmung",seq:[["Einatmen durch die Nase",4,1.15],["Langsam ausatmen",6,.6]],rounds:60,intro:"4 Sekunden ein, 6 aus. 10 Minuten, am besten im Bett mit dunklem Bildschirm."},
+};
+const SCAN=["Leg dich bequem hin. Atme dreimal langsam aus.","Spür deine Stirn und die Augen. Lass sie weich werden.","Kiefer locker, Zunge liegt ruhig im Mund.","Schultern sinken nach unten, schwer und warm.","Arme und Hände werden schwer.","Spür den Atem im Brustkorb. Nichts tun, nur bemerken.","Der Bauch hebt und senkt sich von allein.","Rücken und Becken sinken in die Matratze.","Oberschenkel und Knie lassen los.","Waden und Füße werden warm und schwer.","Dein ganzer Körper ist schwer und ruhig.","Bleib einfach liegen. Wenn Gedanken kommen, lass sie ziehen."];
+const WORDS="Apfel Anker Ballon Birke Brücke Bleistift Delfin Decke Eule Eichel Feder Fahrrad Garten Gitarre Hafen Holzhaus Igel Insel Jacke Kerze Kastanie Kiesel Laterne Leuchtturm Mond Muschel Nebel Nest Orange Paddel Pinsel Quelle Regenbogen Ruderboot Sand Segel Schnecke Teekanne Tannenzapfen Ufer Uhr Vogel Wiese Wolke Wollschal Zebra Zitrone Ahorn Bach Bergsee Blume Daune Düne Erdbeere Fenster Gans Glocke Hängematte Heu Kajak Kirsche Kompass Lavendel Lampe Moos Mühle Nuss Ozean Pfirsich Pflaume Rabe Reh Schaukel Seerose Stern Strand Tulpe Veilchen Wal Weg Zaun Zimt Brot Honig Kakao Kissen Mantel Mütze Radio Schiff Treppe Vase Wanderweg Ziege Flöte Hügel Kamin Linde".split(" ");
+
+const OV={
+  settings:()=>`${head("Nachtwerk")}<div class="ovbody">
+    <div class="menu-links">${TABS.map(t=>`<button class="${tab===t[0]?"liquid-glass-selected":"liquid-glass"}" data-tab="${t[0]}">${ic(t[2])}${t[1]}</button>`).join("")}</div>
+    ${IN_CLAUDE?`<div class="set liquid-glass"><h3>${ic("smartphone")}Aufs Handy</h3><p>Nachtwerk gibt es als App für den Startbildschirm. Deine Daten nimmst du mit einem Code mit.</p><div class="btnrow"><button class="cta solid" data-open="handy">Aufs Handy übertragen</button></div></div>`:""}
+    <div class="set liquid-glass"><h3>${ic("refresh-cw")}Daten</h3>
+      <p>${M?`${M.N.length} Nächte ausgewertet (letzte Nacht ${fmtDate(M.last.date)}). Quelle: ${({live:"Oura über Claude",oura:"Oura direkt",code:"Code aus Claude",file:"Datei",snap:"gespeicherter Stand",demo:"Beispieldaten"})[SOURCE.kind]||"–"}${SOURCE.at?", "+new Date(SOURCE.at).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):""}.`:"Noch keine Daten."}</p>
+      <div class="btnrow">${IN_CLAUDE?(liveState.btn?`<button class="pillbtn liquid-glass" data-act="live">${liveState.btn}</button>`:""):`<button class="pillbtn liquid-glass" data-open="code">Code einfügen</button><button class="pillbtn liquid-glass" data-open="oura">${OURA.token()?"Oura: aktualisieren":"Direkt mit Oura"}</button>`}
+      <button class="pillbtn liquid-glass" data-act="export">Sichern</button>${IN_CLAUDE?"":`<button class="pillbtn liquid-glass" data-act="import-file">Datei laden</button>`}</div>
+      <input type="file" id="fileIn" accept="application/json,.json" hidden></div>
+    <div class="set liquid-glass"><h3>${ic("settings")}Persönlich</h3>
+      <label class="fl" for="nameIn">Dein Name</label><input class="glass-input" id="nameIn" value="${esc(CFG.name)}" placeholder="Wie soll Nachtwerk dich nennen?" maxlength="30">
+      <label class="fl">Schlafbedarf pro Nacht</label>
+      <div class="tune"><span class="tiny" style="margin:0;max-width:150px">Die meisten Erwachsenen brauchen 7 bis 9 Stunden. Fühlst du dich mit mehr fitter, stell mehr ein.</span><div class="ctrl"><button class="liquid-glass" data-need="-15" aria-label="Weniger">${ic("minus")}</button><b class="num" style="font-size:20px;min-width:70px">${hm(CFG.need)}</b><button class="liquid-glass" data-need="15" aria-label="Mehr">${ic("plus")}</button></div></div>
+      <label class="fl">Warmer Nachtfilter</label>
+      <div class="seg liquid-glass">${[["auto","Ab 3 h vor Licht aus"],["an","Immer"],["aus","Aus"]].map(([k,v])=>`<button data-night="${k}" aria-pressed="${CFG.night===k}">${v}</button>`).join("")}</div>
+      <p class="tiny">Für die Nacht zählt die Helligkeit mehr als die Farbe. Stell am Handy zusätzlich „Extra dunkel“ (Android) oder „Weißpunkt reduzieren“ (iPhone) ein.</p>
+    </div>
+    ${!IN_CLAUDE?`<div class="set liquid-glass"><h3>${ic("download")}App installieren</h3><p>${installHint()}</p>${INSTALL.deferred?`<div class="btnrow"><button class="cta solid" data-act="install">Installieren</button></div>`:""}</div>`:""}
+    <div class="set liquid-glass"><h3>${ic("lock")}Privatsphäre</h3><p>Deine Schlafdaten bleiben auf diesem Gerät. ${IN_CLAUDE?"In Claude liest die Seite deine Oura-Daten nur mit deiner Erlaubnis.":"Ein Abruf direkt von Oura läuft nur über deine eigene Brücke, die nichts speichert."}</p>${!IN_CLAUDE&&M?`<div class="btnrow"><button class="pillbtn liquid-glass" data-act="wipe">Alle Daten löschen</button></div>`:""}</div>
+    <p class="tiny" style="text-align:center;margin-top:18px">Nachtwerk ersetzt keine ärztliche Beratung.</p>
+  </div>`,
+  handy:()=>`${head("Aufs Handy übertragen")}<div class="ovbody">
+    <div class="set liquid-glass"><h3>${ic("smartphone")}1 · App öffnen</h3><p>Öffne diese Adresse auf deinem Handy in Chrome (Android) oder Safari (iPhone):</p><p style="margin-top:8px"><code>${PWA_URL}</code></p><div class="btnrow"><button class="pillbtn liquid-glass" data-copy="url">${ic("copy")} Adresse kopieren</button><a class="pillbtn liquid-glass" href="${PWA_URL}" target="_blank" rel="noopener" style="text-decoration:none">${ic("external-link")} Öffnen</a></div></div>
+    <div class="set liquid-glass"><h3>${ic("download")}2 · Installieren</h3><p><b>Android:</b> „Installieren“ antippen oder Menü ⋮ → „App installieren“.<br><b>iPhone:</b> Teilen → „Zum Home-Bildschirm“.</p></div>
+    <div class="set liquid-glass"><h3>${ic("clipboard")}3 · Daten mitnehmen</h3><p>Kopiere den Code und füge ihn in der App unter Menü → „Code einfügen“ ein. Er enthält ${DATA.sleep.length} Schlafphasen. Teile ihn mit niemandem.</p>
+      <div class="btnrow"><button class="cta solid" data-copy="code">${ic("copy")} Code kopieren</button><a class="pillbtn liquid-glass" id="codeLink" href="${PWA_URL}" target="_blank" rel="noopener" style="text-decoration:none">${ic("link")} App mit Daten öffnen</a></div>
+      <p class="tiny">„App mit Daten öffnen“ überträgt alles in einem Schritt, wenn du diese Seite schon auf dem Handy offen hast. Auf dem iPhone öffnet der Link Safari statt der App. Kopiere dort lieber den Code.</p>
+      <textarea class="glass-input" id="codeOut" rows="3" readonly style="margin-top:10px;font-size:11px">Code wird erstellt …</textarea></div>
+  </div>`,
+  code:()=>`${head("Code einfügen")}<div class="ovbody">
+    ${IS_PWA&&isIOS()&&!isStandalone()?`<div class="set liquid-glass"><h3>${ic("info")}Erst installieren</h3><p>Auf dem iPhone hat die App vom Home-Bildschirm einen eigenen Speicher. Installiere Nachtwerk zuerst (Teilen → „Zum Home-Bildschirm“) und füge den Code dann dort ein.</p></div>`:""}
+    <div class="set liquid-glass"><h3>${ic("clipboard")}Code aus Claude</h3><ol><li>Öffne Nachtwerk in Claude (am Computer oder Handy).</li><li>Menü → „Aufs Handy übertragen“ → „Code kopieren“.</li><li>Hier lang tippen → Einfügen → Übernehmen.</li></ol>
+      <textarea class="glass-input" id="codeIn" rows="5" placeholder="NW1.…" style="margin-top:12px;font-size:12px" data-autofocus></textarea>
+      <div class="btnrow"><button class="cta solid" data-act="code-apply">Übernehmen</button></div></div>
+  </div>`,
+  oura:()=>ouraPanel(),
+  parken:()=>{const n=store.get("nw_notes",{})[nightKeyEvening()]||{};return `${head("Gedanken parken")}<div class="ovbody">
+    <p class="lead" style="margin-top:0">Schreib 5 Minuten auf, was morgen ansteht. So muss dein Kopf es nicht festhalten.</p>
+    <label class="fl" for="todoIn">Morgen erledige ich …</label><textarea class="glass-input" id="todoIn" rows="5" placeholder="Konkret: Mail an …, Kapitel 3 lesen, Einkauf …" data-autofocus>${esc(n.todo||"")}</textarea>
+    <label class="fl" for="worryIn">Was mich beschäftigt, und ein erster Schritt</label><textarea class="glass-input" id="worryIn" rows="4" placeholder="Sorge → nächster kleiner Schritt">${esc(n.worry||"")}</textarea>
+    <div class="btnrow"><button class="cta solid" data-act="notes-save">${ic("check")} Geparkt. Ab ins Bett</button></div>
+    <p class="tiny">Bleibt nur auf diesem Gerät.</p></div>`},
+  shuffle:()=>`${head("Kognitives Shuffeln")}<div class="center"><div class="bigword" id="word">Bereit</div><p class="count" style="max-width:280px;line-height:1.55">Stell dir jedes Bild kurz vor, ohne Geschichte dazu. Das lenkt vom Grübeln ab. Vielen hilft es beim Einschlafen, gut untersucht ist es aber noch nicht.</p><button class="pillbtn liquid-glass" data-act="shuffle-start" id="shBtn">Starten</button></div>`,
+  scan:()=>`${head("Body-Scan")}<div class="center"><div class="orb" id="orb" style="transition-duration:6s"></div><p class="phase" id="scanText" style="max-width:300px;font-size:19px;line-height:1.45">Lies jeden Satz und schließ dann die Augen. Alle 30 Sekunden kommt der nächste.</p><p class="count" id="scanCount">12 Schritte · etwa 6 Minuten</p><button class="pillbtn liquid-glass" data-act="scan-start" id="scanBtn">Starten</button></div>`,
+  wach:()=>`<div class="ovhead"><span></span><button class="circle-btn" data-act="close" aria-label="Schließen" style="border:1px solid #2a0a0a">${ic("x")}</button></div>
+    <div class="center"><p id="wachText">Alles gut. Schau nicht auf die Uhr.<br><br>Bleib liegen und atme langsam aus. Wenn du dich nach einer Weile noch hellwach fühlst, steh auf, geh in einen anderen Raum mit wenig Licht und komm zurück, wenn du schläfrig bist. Das Handy darf jetzt ausgehen.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="pillbtn" data-tool="resonanz">Ruhe-Atmung</button><button class="pillbtn" data-tool="shuffle">Shuffeln</button></div></div>`,
+};
+Object.keys(BREATH).forEach(k=>{OV[k]=()=>`${head(BREATH[k].t)}<div class="center"><div class="orb" id="orb"></div><div class="phase" id="phase">Bereit</div><div class="count" id="bcount">${BREATH[k].intro}</div><button class="pillbtn liquid-glass" data-act="breath-start" data-kind="${k}" id="bBtn">Starten</button></div>`});
+const OVINIT={
+  handy:async()=>{const code=await encodeData(DATA);const out=$("#codeOut");if(out)out.value=code;const l=$("#codeLink");if(l)l.href=PWA_URL+"#import="+code;OVINIT.handy.code=code},
+  // Der Bildschirm darf hier ausgehen. Wer nach 20 Minuten wieder draufschaut, sieht den nächsten Schritt.
+  wach:()=>{const t0=Date.now(),show=()=>{const t=$("#wachText");if(t&&ovKind==="wach")t.innerHTML="Seit etwa 20 Minuten wach?<br><br>Dann steh jetzt auf. Gedimmtes Licht, etwas Ruhiges, kein Handy. Zurück ins Bett, sobald du schläfrig wirst. So lernt dein Körper wieder: Bett heißt Schlaf."};
+    ovTimer=setTimeout(show,20*60*1000);OVINIT.wach.check=()=>{if(Date.now()-t0>=20*60*1000)show()}},
+};
+function startBreath(kind){
+  const B=BREATH[kind],orb=$("#orb"),ph=$("#phase"),ct=$("#bcount"),btn=$("#bBtn");if(!orb)return;
+  btn.hidden=true;holdWake();let round=0,step=0;
+  const run=()=>{if(round>=B.rounds){ph.textContent="Fertig. Gute Nacht.";ct.textContent="Licht aus, Augen zu.";orb.style.transitionDuration="2s";orb.style.transform="scale(.6)";releaseWake();return}
+    const [t,s,sc]=B.seq[step];ph.textContent=t;ct.textContent=`Runde ${round+1} von ${B.rounds}`;orb.style.transitionDuration=s+"s";orb.style.transform=`scale(${sc})`;
+    ovTimer=setTimeout(()=>{step++;if(step>=B.seq.length){step=0;round++}run()},s*1000)};
+  orb.style.transitionDuration="0s";orb.style.transform="scale(.6)";ovTimer=setTimeout(run,500);
+}
+function startShuffle(){
+  const w=$("#word"),b=$("#shBtn");if(!w)return;b.hidden=true;holdWake();
+  let last="";const next=()=>{let x;do{x=WORDS[Math.floor(Math.random()*WORDS.length)]}while(x===last);last=x;w.style.opacity=0;setTimeout(()=>{w.textContent=x;w.style.opacity=1},600)};
+  next();ovTimer=setInterval(next,8000);
+}
+function startScan(){
+  const t=$("#scanText"),c=$("#scanCount"),b=$("#scanBtn"),orb=$("#orb");if(!t)return;b.hidden=true;holdWake();let i=0;
+  const run=()=>{if(i>=SCAN.length){t.textContent="Gute Nacht.";c.textContent="";releaseWake();return}t.textContent=SCAN[i];c.textContent=`${i+1} von ${SCAN.length}`;orb.style.transform=`scale(${i%2?.7:1})`;i++;ovTimer=setTimeout(run,30000)};
+  run();
+}
+
+/* ===== Kalender-Datei mit täglichen Erinnerungen ===== */
+function makeICS(){
+  const {bed}=planTimes(), S=planSteps(), pick=["koffein","licht","sofa","parken","aus"];
+  const now=new Date(), stamp=now.toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
+  const nm=now.getHours()*60+now.getMinutes(), nowB=nm<720?nm+1440:nm;
+  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Nachtwerk//Schlaf//DE","CALSCALE:GREGORIAN","X-WR-CALNAME:Nachtwerk"];
+  S.filter(x=>pick.includes(x.id)).forEach(x=>{
+    // Zeiten zählen ab Mitternacht des Vortags; der erste Termin ist der nächste, der noch kommt
+    let day=nm<720?addDays(localKey(),-1):localKey();if(x.t<=nowB)day=addDays(day,1);
+    const at=addDays(day,Math.floor(x.t/1440)),m=((x.t%1440)+1440)%1440;
+    const dt=at.replace(/-/g,"")+"T"+pad(Math.floor(m/60))+pad(m%60)+"00";
+    const txt=(x.id==="aus"?"Licht aus. ":"")+x.s;
+    lines.push("BEGIN:VEVENT","UID:nachtwerk-"+x.id+"@nachtwerk","DTSTAMP:"+stamp,"DTSTART:"+dt,"DURATION:PT10M","RRULE:FREQ=DAILY",
+      "SUMMARY:"+icsEsc((x.id==="sofa"?"Sofa-Wächter: ":"")+x.b),"DESCRIPTION:"+icsEsc(txt),
+      "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(x.b),"TRIGGER:PT0M","END:VALARM","END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+  return lines.map(foldICS).join("\r\n")+"\r\n";
+}
+const icsEsc=t=>String(t).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+function foldICS(l){const out=[];let cur="",len=0;for(const ch of l){const b=new TextEncoder().encode(ch).length;if(len+b>73){out.push(cur);cur=" ";len=1}cur+=ch;len+=b}out.push(cur);return out.join("\r\n")}
+
+/* ===== Code zum Übertragen ===== */
+const b64u={enc:u8=>{let s="";for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")},
+  dec:str=>{str=str.replace(/-/g,"+").replace(/_/g,"/");while(str.length%4)str+="=";const s=atob(str),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}};
+async function encodeData(D){
+  // Name und Schlafbedarf reisen mit, damit die App auf dem Handy gleich passt
+  const json=JSON.stringify({v:1,d:D,p:{name:CFG.name,need:CFG.need}});
+  try{if(window.CompressionStream){const cs=new Blob([json]).stream().pipeThrough(new CompressionStream("deflate-raw"));const u=new Uint8Array(await new Response(cs).arrayBuffer());return "NW1."+b64u.enc(u)}}catch(e){}
+  return "NW0."+b64u.enc(new TextEncoder().encode(json));
+}
+async function decodeData(code){
+  code=String(code).trim().replace(/\s+/g,"");
+  const m=code.match(/NW([01])\.([A-Za-z0-9_-]+)/);if(!m) throw new Error("Das sieht nicht wie ein Nachtwerk-Code aus.");
+  let u=b64u.dec(m[2]);
+  if(m[1]==="1"){const ds=new Blob([u]).stream().pipeThrough(new DecompressionStream("deflate-raw"));u=new Uint8Array(await new Response(ds).arrayBuffer())}
+  const o=JSON.parse(new TextDecoder().decode(u));
+  if(!o||!o.d||!Array.isArray(o.d.sleep)) throw new Error("Der Code enthält keine Schlafdaten.");
+  if(o.p){if(o.p.name&&!store.get("nw_name",null))store.set("nw_name",String(o.p.name).slice(0,30));if(o.p.need&&store.get("nw_need",null)==null)store.set("nw_need",clamp(Number(o.p.need)||450,360,600))}
+  return o.d;
+}
+async function importCode(code,src="code"){
+  const tm=String(code).trim().match(/NWT\.([A-Za-z0-9_-]+)/);
+  if(tm){const t=JSON.parse(new TextDecoder().decode(b64u.dec(tm[1])));if(!t.v||!t.exp||t.exp<Date.now())throw new Error("Der Anmelde-Code ist abgelaufen.");
+    const px=t.px?String(t.px).trim().replace(/\/+$/,""):"";
+    if(px&&px!==OURA.proxy()){if(!/^https:\/\/[a-z0-9.-]+\.workers\.dev$/i.test(px)||!confirm("Diese Brücken-Adresse übernehmen?\n"+px))throw new Error("Brücken-Adresse nicht übernommen.");store.set("nw_oura_proxy",px)}
+    store.set("nw_oura_tok",{v:String(t.v),exp:Number(t.exp)});if(t.cid)store.set("nw_oura_cid",String(t.cid).slice(0,80));
+    toast("Oura-Anmeldung übernommen");OURA.sync().catch(e=>{ouraError=e.message;toast(e.message)});return "token"}
+  const d=await decodeData(code);
+  DATA=mergeData(SOURCE.kind==="demo"?EMPTY:DATA,d);saveData(src);rebuild();
+  toast(`${d.sleep.length} Schlafphasen übernommen`);
+}
+
+/* ===== Oura direkt (nur Web-App) =====
+   Anmeldung im Browser (OAuth ohne Geheimnis, Token im #-Teil der Rücksprung-Adresse, gilt etwa 30 Tage).
+   Oura erlaubt keine direkten Browser-Abrufe (CORS), darum laufen die Daten über eine kleine eigene Brücke
+   (Cloudflare Worker, siehe oura-proxy/). Ohne Brücke bleibt der Code aus Claude. */
+const GUIDE_URL="https://github.com/ferdawsyousuf-stack/psychologie-lern-app/blob/HEAD/nachtwerk/oura-proxy/ANLEITUNG.md";
+const OURA={
+  token:()=>{const t=store.get("nw_oura_tok",null);return t&&(!t.exp||t.exp>Date.now())?t:null},
+  clientId:()=>store.get("nw_oura_cid",""),
+  proxy:()=>String(store.get("nw_oura_proxy","")).trim().replace(/\/+$/,""),
+  daysLeft:()=>{const t=OURA.token();return t?Math.floor((t.exp-Date.now())/864e5):null},
+  authorize(){
+    const cid=OURA.clientId();if(!cid){toast("Bitte zuerst die Client-ID eintragen");return}
+    const r=new Uint8Array(16);crypto.getRandomValues(r);const state=b64u.enc(r);store.set("nw_oura_state",state);
+    // Ohne scope: Oura nimmt die Bereiche, die bei der App angehakt sind. Das ist am robustesten.
+    const u=new URL("https://cloud.ouraring.com/oauth/authorize");
+    u.searchParams.set("response_type","token");u.searchParams.set("client_id",cid);u.searchParams.set("redirect_uri",PWA_URL);u.searchParams.set("state",state);
+    location.href=u.toString();
+  },
+  async get(path,params){
+    const t=OURA.token();if(!t) throw Object.assign(new Error("Nicht mit Oura verbunden."),{code:"auth"});
+    // Ohne Brücke direkt versuchen; Oura blockt das bisher im Browser (CORS), dann braucht es die Brücke
+    const px=OURA.proxy(),base=/^https:\/\//.test(px)?px:"https://api.ouraring.com";
+    const mk=extra=>base+"/v2/usercollection/"+path+"?"+new URLSearchParams({...params,...extra});
+    let url=mk({}),all=[];
+    for(let guard=0;guard<10&&url;guard++){
+      let r;try{r=await fetch(url,{headers:{Authorization:"Bearer "+t.v},cache:"no-store"})}catch(e){throw Object.assign(new Error(px?"Die Brücke zu Oura ist nicht erreichbar. Stimmt die Adresse?":"Oura blockt den direkten Abruf aus dem Browser. Richte die Brücke ein (Anleitung im Oura-Fenster)."),{code:"net"})}
+      if(r.status===401){store.del("nw_oura_tok");throw Object.assign(new Error("Die Anmeldung bei Oura ist abgelaufen. Bitte neu verbinden."),{code:"auth"})}
+      if(r.status===403) throw Object.assign(new Error("Oura verweigert „"+path+"“. Ist der Bereich bei deiner Oura-App angehakt und die Mitgliedschaft aktiv?"),{code:"scope"});
+      if(r.status===429) throw Object.assign(new Error("Oura bremst gerade. Versuch es in ein paar Minuten noch mal."),{code:"rate"});
+      if(!r.ok) throw Object.assign(new Error("Oura hat mit Fehler "+r.status+" geantwortet."),{code:"http"});
+      const j=await r.json();all=all.concat(j.data||[]);
+      url=j.next_token?mk({next_token:j.next_token}):null;
+    }
+    return all;
+  },
+  async sync(){
+    // end_date gilt bei /sleep als „bis ausschließlich“, darum einen Tag weiter
+    const p={start_date:addDays(localKey(),-60),end_date:addDays(localKey(),1)};
+    const [sl,ds,rd,ac,sp]=await Promise.all([OURA.get("sleep",p),OURA.get("daily_sleep",p).catch(()=>[]),OURA.get("daily_readiness",p).catch(()=>[]),OURA.get("daily_activity",p).catch(()=>[]),OURA.get("daily_spo2",p).catch(()=>[])]);
+    const score={};ds.forEach(x=>score[x.day]=x.score);
+    const mn=s=>s==null?null:Math.round(s/60);
+    const d={
+      sleep:sl.filter(x=>!["deleted","rest"].includes(x.type)&&x.bedtime_start&&x.bedtime_end).map(x=>[x.day,x.bedtime_start,x.bedtime_end,mn(x.total_sleep_duration)||0,mn(x.rem_sleep_duration)||0,mn(x.deep_sleep_duration)||0,mn(x.light_sleep_duration)||0,mn(x.awake_time)||0,x.efficiency??null,x.latency??null,x.lowest_heart_rate??null,x.average_hrv!=null?Math.round(x.average_hrv):null,score[x.day]??null,x.average_breath??null]),
+      ready:rd.map(x=>{const c=x.contributors||{};return [x.day,x.score,c.sleep_balance,c.hrv_balance,c.recovery_index,c.resting_heart_rate,c.previous_night,c.activity_balance,x.temperature_deviation??0]}),
+      act:ac.map(x=>[x.day,x.score,x.steps,x.active_calories]),
+      spo2:sp.filter(x=>x.spo2_percentage&&x.spo2_percentage.average).map(x=>[x.day,x.spo2_percentage.average,x.breathing_disturbance_index??null]),
+    };
+    // Nächte im abgerufenen Zeitraum ersetzen, damit geänderte oder gelöschte Nächte von Oura verschwinden
+    const base=SOURCE.kind==="demo"?EMPTY:{...DATA,sleep:d.sleep.length?DATA.sleep.filter(r=>r[0]<p.start_date):DATA.sleep};
+    DATA=mergeData(base,d);saveData("oura");rebuild();
+    toast(`Oura: ${d.sleep.length} Schlafphasen geladen`);
+  },
+  handleRedirect(){
+    if(!location.hash.includes("access_token=")&&!location.hash.includes("error=")) return false;
+    const h=new URLSearchParams(location.hash.slice(1));
+    history.replaceState(null,"",location.pathname+location.search);
+    if(h.get("error")){toast("Oura-Anmeldung abgebrochen");return true}
+    const st=store.get("nw_oura_state",null);
+    if(!st||h.get("state")!==st){
+      // Ohne gestartete Anmeldung kein Token übernehmen. iPhone: Landet der Rücksprung in Safari, dort neu anmelden
+      const ios=isIOS()&&!isStandalone();
+      toast(ios&&!st?"Bitte die Anmeldung hier in Safari noch einmal starten.":"Anmeldung nicht bestätigt. Bitte noch mal verbinden.");
+      if(ios)setTimeout(()=>openOv("oura"),300);
+      return true}
+    const ttl=Math.min(Number(h.get("expires_in"))||2592000,31*86400);
+    store.set("nw_oura_tok",{v:h.get("access_token"),exp:Date.now()+ttl*1000-60000});store.del("nw_oura_state");
+    // iPhone: Landet der Rücksprung in Safari statt in der App, hilft der Anmelde-Code (siehe Oura-Fenster)
+    setTimeout(()=>{if(!isStandalone()&&isIOS())openOv("oura");OURA.sync().then(()=>{ouraError=null}).catch(e=>{toast(e.message);ouraError=e.message})},300);
+    return true;
+  },
+  // Anmelde-Code für den Umzug von Safari in die installierte App: Token, Brücke und Client-ID
+  tokenCode:()=>{const t=OURA.token();return t?"NWT."+b64u.enc(new TextEncoder().encode(JSON.stringify({...t,px:OURA.proxy(),cid:OURA.clientId()}))):""},
+};
+let ouraError=null;
+function ouraPanel(){
+  const t=OURA.token(),left=OURA.daysLeft();
+  return `${head("Daten von Oura")}<div class="ovbody">
+    ${t?`<div class="set liquid-glass"><h3>${ic("check")}Mit Oura verbunden</h3><p>Anmeldung gültig bis ${new Date(t.exp).toLocaleDateString("de-DE")}${left!=null&&left<=3?" · bald neu anmelden":""}.${ouraError?`<br><span style="color:var(--bad)">${esc(ouraError)}</span>`:""}</p>
+      <div class="btnrow"><button class="cta solid" data-act="sync">${ic("refresh-cw")} Jetzt aktualisieren</button><button class="pillbtn liquid-glass" data-act="oura-login">Neu anmelden</button><button class="pillbtn liquid-glass" data-act="oura-out">Trennen</button></div>
+      ${!isStandalone()?`<p class="tiny">Auf dem iPhone landet die Anmeldung manchmal in Safari statt in der App. Dann hier kopieren und in der App unter „Code einfügen“ einsetzen.</p><div class="btnrow"><button class="pillbtn liquid-glass" data-copy="token">${ic("copy")} Anmelde-Code kopieren</button></div>`:""}</div>`:""}
+    <div class="set liquid-glass"><h3>${ic("clipboard")}Am einfachsten: Code aus Claude</h3><p>Öffne Nachtwerk in Claude. Dort kommen deine Daten über die Oura-Verbindung. Tippe auf „Aufs Handy übertragen“ und füge den Code hier ein.</p><div class="btnrow"><button class="cta solid" data-open="code">Code einfügen</button></div></div>
+    <div class="set liquid-glass"><h3>${ic("link")}Direkt mit Oura (einmalig einrichten)</h3>
+      <p>Oura lässt Browser-Apps nicht direkt an die Daten. Darum braucht es zwei kostenlose Bausteine, etwa 15 Minuten Arbeit. Danach lädt Nachtwerk deine Nächte selbst. <a href="${GUIDE_URL}" target="_blank" rel="noopener">Ausführliche Anleitung</a></p>
+      <ol><li>Auf <a href="https://developer.ouraring.com" target="_blank" rel="noopener">developer.ouraring.com</a> eine App anlegen: Name <code>Nachtwerk</code>, als Website, Datenschutz und Nutzungsbedingungen <code>${PWA_URL}</code>, als Redirect-URI genau <code>${PWA_URL}</code>. Nur „Daily“ und „SpO2“ angehakt lassen. Dann die <b>Client ID</b> kopieren.</li>
+      <li>Bei Cloudflare (kostenlos) einen Worker anlegen und den Code aus der Anleitung einfügen. Das ist die Brücke. Ihre Adresse endet auf <code>workers.dev</code>.</li>
+      <li>Beides hier eintragen und anmelden.</li></ol>
+      <label class="fl" for="cidIn">Client ID</label><input class="glass-input" id="cidIn" value="${esc(OURA.clientId())}" placeholder="aus developer.ouraring.com" autocomplete="off" spellcheck="false">
+      <label class="fl" for="proxyIn">Brücken-Adresse</label><input class="glass-input" id="proxyIn" value="${esc(OURA.proxy())}" placeholder="https://nachtwerk-oura.….workers.dev" autocomplete="off" spellcheck="false" inputmode="url">
+      <div class="btnrow"><button class="cta solid" data-act="oura-login">Bei Oura anmelden</button></div>
+      <p class="tiny">Die Anmeldung läuft direkt bei Oura, Nachtwerk sieht dein Passwort nie. Die Brücke reicht nur Anfragen weiter und speichert nichts. Alle 30 Tage einmal neu anmelden. Morgens zuerst die Oura-App öffnen, damit die Nacht in der Cloud ist.</p></div>
+  </div>`;
+}
+
+/* ===== Beispieldaten (erfunden, nur zum Ausprobieren) ===== */
+function demoData(){
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const sleep=[],ready=[],act=[];
+  for(let i=34;i>=1;i--){
+    const day=addDays(localKey(),-i), prev=addDays(day,-1);
+    const bed=new Date(prev+"T23:30:00");bed.setMinutes(bed.getMinutes()+Math.round((rnd()-.4)*90));
+    const tib=Math.round(430+rnd()*80), end=new Date(bed.getTime()+tib*6e4);
+    const awake=Math.round(30+rnd()*50), total=tib-awake, deep=Math.round(total*(.18+rnd()*.06)), rem=Math.round(total*(.19+rnd()*.06));
+    sleep.push([day,bed.toISOString(),end.toISOString(),total,rem,deep,total-deep-rem,awake,Math.round(total/tib*100),Math.round(300+rnd()*600),Math.round(48+rnd()*6),Math.round(60+rnd()*40),Math.round(62+total/tib*14+rnd()*8),15+rnd()]);
+    ready.push([day,Math.round(70+rnd()*20),Math.round(60+rnd()*25),85,80,90,70,90,(rnd()-.5)*.4]);
+    act.push([prev,Math.round(80+rnd()*18),Math.round(3000+rnd()*9000),Math.round(200+rnd()*600)]);
+  }
+  return {sleep,ready,act,spo2:[]};
+}
+
+/* ===== Live über die Oura-Verbindung in Claude ===== */
+let liveState={btn:null};
+const TOOLS_MCP={sleep:"get_sleep",ready:"get_readiness",act:"get_activity"};
+const live={};
+const RANGE=()=>({from_date:addDays(localKey(),-60),to_date:addDays(localKey(),1),limit:100});
+function toCompact(kind,p){
+  try{
+    if(kind==="sleep")return (p.sleep||[]).map(r=>[r.date,r.bedtime_start,r.bedtime_end,r.total_sleep_minutes,r.rem_minutes,r.deep_minutes,r.light_minutes,r.awake_minutes,r.sleep_efficiency_percent,r.sleep_latency_seconds,r.lowest_heart_rate,r.avg_hrv,r.sleep_score,r.avg_breath_rate??null]);
+    if(kind==="ready")return (p.readiness||[]).map(r=>{const c=r.contributors||{};return [r.date,r.readiness_score,c.sleep_balance,c.hrv_balance,c.recovery_index,c.resting_heart_rate,c.previous_night,c.activity_balance,c.temperature_deviation??0]});
+    if(kind==="act")return (p.activity||[]).map(r=>[r.date,r.activity_score,r.steps,r.calories_active]);
+  }catch(e){}return null;
+}
+function applyLive(kind,payload){
+  const c=toCompact(kind,payload);if(!c||!c.length)return;
+  live[kind]=c;
+  if(kind==="sleep"){const lo=c.reduce((a,r)=>String(r[0])<a?String(r[0]):a,String(c[0][0]));DATA={...DATA,sleep:DATA.sleep.filter(r=>r[0]<lo)}}
+  DATA=mergeData(DATA,{sleep:live.sleep||[],ready:live.ready||[],act:live.act||[]});
+  if(kind==="sleep"){saveData("live");liveState.btn=null}else saveData();
+  rebuild();
+}
+let mcpRef=null;
+function onLiveError(err){
+  const c=err&&err.code;
+  if(c==="approval_required"||c==="not_in_manifest"||c==="consent_required")liveState.btn="Live-Daten laden";
+  else if(c==="needs_reauth"){liveState.btn=null;toast("Oura in claude.ai unter Einstellungen → Connectors neu verbinden")}
+  else if(c==="server_not_connected"||c==="selection_required"){liveState.btn=null;toast("Oura unter Einstellungen → Connectors hinzufügen")}
+  else if(err&&err.retryable)liveState.btn="Erneut versuchen";
+  else liveState.btn="Live-Daten laden";
+  keepScroll(render);
+}
+async function loadLiveOnce(){
+  if(!mcpRef)return;liveState.btn="Lädt …";keepScroll(render);
+  try{for(const k of Object.keys(TOOLS_MCP)){const r=await mcpRef.callTool("Oura",TOOLS_MCP[k],RANGE(),{cache:{staleTime:60000,gcTime:3600000}});applyLive(k,r.payload)}}
+  catch(e){onLiveError(e)}
+}
+async function connectLive(){
+  let mcp=null;try{mcp=await window.claude.use("mcp")}catch(e){}
+  if(!mcp)return;mcpRef=mcp;
+  Object.keys(TOOLS_MCP).forEach(k=>{
+    try{mcp.watchTool("Oura",TOOLS_MCP[k],RANGE(),ev=>{if(ev.type==="data")applyLive(k,ev.result.payload);else if(k==="sleep")onLiveError(ev.error)},{cache:{staleTime:300000,gcTime:86400000},refetchInterval:1800000})}catch(e){}
+  });
+}
+
+/* ===== Installieren (Web-App) ===== */
+const INSTALL={deferred:null};
+const isStandalone=()=>!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+function installHint(){
+  if(isStandalone()) return "Nachtwerk läuft schon als App. Sie startet auch ohne Internet.";
+  if(INSTALL.deferred) return "Mit einem Tipp auf den Startbildschirm. Startet sofort, auch ohne Internet.";
+  if(isIOS()) return "In Safari unten auf Teilen tippen, dann „Zum Home-Bildschirm“.";
+  return "In Chrome: Menü ⋮ → „App installieren“ oder „Zum Startbildschirm hinzufügen“.";
+}
+function showInstallSheet(){
+  if(!IS_PWA||isStandalone()) return;
+  const later=store.get("nw_install_later",0);if(Date.now()-later<3*864e5) return;
+  const mode=INSTALL.deferred?"prompt":isIOS()?"ios":null;if(!mode) return;
+  $("#installHost").innerHTML=`<div class="install" role="dialog" aria-label="Nachtwerk als App installieren"><div class="ic-card">
+    <div class="head"><img src="icons/icon-192.png" alt=""><div><div style="font-size:17px;font-weight:500">Nachtwerk als App</div><div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:4px;line-height:1.4">Eigenes Symbol auf dem Startbildschirm. Startet sofort, auch ohne Internet.</div></div></div>
+    ${mode==="ios"?`<ol><li><span class="step">1</span><span>In Safari unten auf ${ic("share")} Teilen tippen</span></li><li><span class="step">2</span><span>${ic("square-plus")} „Zum Home-Bildschirm“ wählen</span></li></ol>`:""}
+    <div class="btnrow" style="justify-content:flex-end;margin-top:18px"><button class="pillbtn" data-act="install-later">${mode==="ios"?"Verstanden":"Später"}</button>${mode==="prompt"?`<button class="cta solid" data-act="install">Installieren</button>`:""}</div></div></div>`;
+}
+if(IS_PWA){
+  addEventListener("beforeinstallprompt",e=>{e.preventDefault();INSTALL.deferred=e;setTimeout(showInstallSheet,1400)});
+  addEventListener("appinstalled",()=>{INSTALL.deferred=null;$("#installHost").innerHTML="";toast("Installiert. Viel Spaß mit Nachtwerk")});
+  if("serviceWorker" in navigator){
+    const had=!!navigator.serviceWorker.controller;let reloading=false;
+    // Neue Version: nicht mitten in einer Übung oder einem Entwurf neu laden, sondern beim nächsten Wegwechseln
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!had||reloading)return;reloading=true;
+      if(!ovKind&&!checkinDraft)location.reload();else document.addEventListener("visibilitychange",()=>{if(document.hidden)location.reload()})});
+    addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+  }
+  if(isStandalone()) navigator.storage?.persist?.().catch(()=>{});
+}
+
+/* ===== Nachtfilter ===== */
+function applyNight(){
+  const mode=CFG.night;let on=mode==="an";
+  if(mode==="auto"){
+    const now=new Date(),nm=now.getHours()*60+now.getMinutes(),nowB=nm<720?nm+1440:nm,{bed}=planTimes();
+    on=(nowB>=bed-180&&nowB<bed+420)||store.get("nw_started",null)===nightKeyEvening()&&nowB>=1080;
+  }
+  document.documentElement.classList.toggle("night",on);
+}
+
+/* ===== Rendern ===== */
+function rebuild(){M=build(DATA);keepScroll(render)}
+function render(){
+  const sc=$("#screen");
+  sc.classList.toggle("calm",!animate);animate=false;
+  sc.innerHTML=!M?screenEmpty():({heute:screenHeute,rhythmus:screenRhythmus,analyse:screenAnalyse,faktoren:screenFaktoren,abend:screenAbend})[tab]();
+  $("#tabbar").innerHTML=TABS.map(t=>`<button data-tab="${t[0]}" aria-current="${t[0]===tab?"page":"false"}">${ic(t[2])}${t[1]}</button>`).join("");
+  $("#tabbar").hidden=!M;
+  $("#deskTabs").innerHTML=TABS.map(t=>`<button data-tab="${t[0]}" aria-current="${t[0]===tab?"page":"false"}">${t[1]}</button>`).join("");
+  $$("[data-ic]").forEach(el=>{el.innerHTML=ic(el.dataset.ic);el.removeAttribute("data-ic")});
+  if(M){$("#hsDur").textContent=hm(M.avgTotal);const L=levelInfo(M.avgScore??0);$("#hsLvl").textContent=M.avgScore!=null?Math.round(M.avgScore)+" → "+L.next.min:"–"}
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const a=$("#arc");if(a)a.style.strokeDashoffset=a.dataset.target;
+    $$(".grow").forEach(l=>l.style.width=l.dataset.w+"%");
+  }));
+  const sl=$("#slider");if(sl)initSlider(sl);
+  applyNight();
+}
+
+/* ===== Ereignisse ===== */
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("[data-tab],[data-open],[data-act],[data-tool],[data-coach],[data-filter],[data-goal],[data-wake],[data-need],[data-night],[data-step],[data-rate],[data-tag],[data-copy]");
+  if(!t) return;
+  const d=t.dataset;
+  if(d.tab){setTab(d.tab);return}
+  if(d.open){openOv(d.open);return}
+  if(d.tool){openOv(d.tool);return}
+  if(d.filter){factorFilter=d.filter;keepScroll(render);return}
+  if(d.goal){let g=store.get("nw_goals",null)||defaultGoals();g=g.includes(d.goal)?g.filter(x=>x!==d.goal):[...g,d.goal];store.set("nw_goals",g);keepScroll(render);return}
+  if(d.wake){const def=M?Math.round(M.wakeMean/15)*15:480,sh=shiftPlan();let w=(sh&&sh.active?sh.today:store.get("nw_wake",def))+Number(d.wake);w=((w%1440)+1440)%1440;store.set("nw_wake",w);store.del("nw_shift");rebuild();return}
+  if(d.coach){const base=Math.max(CFG.win,TIB_MIN-CFG.need-40);store.set("nw_win",clamp(base+Number(d.coach),-120,120));store.set("nw_coach",localKey());store.del("nw_coach_minus");rebuild();toast(Number(d.coach)>0?"Schlaffenster verlängert":"Schlaffenster gekürzt");return}
+  if(d.need){store.set("nw_need",clamp(CFG.need+Number(d.need),360,600));rebuild();if(ovKind==="settings")openOv("settings");return}
+  if(d.night){store.set("nw_nightmode",d.night);applyNight();openOv("settings");return}
+  if(d.step){const k="nw_done_"+nightKeyEvening();let s=store.get(k,[]);s=s.includes(d.step)?s.filter(x=>x!==d.step):[...s,d.step];store.set(k,s);keepScroll(render);return}
+  if(d.rate||d.tag){
+    const key=localKey(),base=diary()[key];
+    checkinDraft=checkinDraft||{r:base?base.r:0,tags:base?[...(base.tags||[])]:autoTags(key)};
+    if(d.rate) checkinDraft.r=Number(d.rate);
+    if(d.tag) checkinDraft.tags=checkinDraft.tags.includes(d.tag)?checkinDraft.tags.filter(x=>x!==d.tag):[...checkinDraft.tags,d.tag];
+    const box=$("#checkin");if(box){const tmp=document.createElement("div");tmp.innerHTML=checkinCard();const el=tmp.firstElementChild;el.classList.remove("fu");box.replaceWith(el)}
+    return;
+  }
+  if(d.copy){
+    const txt=d.copy==="url"?PWA_URL:d.copy==="token"?OURA.tokenCode():(OVINIT.handy.code||await encodeData(DATA));
+    try{await navigator.clipboard.writeText(txt);toast(d.copy==="url"?"Adresse kopiert":"Code kopiert")}
+    catch(x){const ta=$("#codeOut");if(ta){ta.value=txt;ta.select();toast("Markiert. Jetzt kopieren")}}
+    return;
+  }
+  const a=d.act;
+  if(a==="close"){closeOv();return}
+  if(a==="live"){loadLiveOnce();return}
+  if(a==="sync"){if(!OURA.token()){openOv("oura");return}toast("Lade von Oura …");try{await OURA.sync();ouraError=null}catch(x){ouraError=x.message;toast(x.message);if(x.code==="auth")openOv("oura")}return}
+  if(a==="oura-login"){const c=$("#cidIn"),px=$("#proxyIn");if(c)store.set("nw_oura_cid",c.value.trim());if(px)store.set("nw_oura_proxy",px.value.trim());
+    if(OURA.proxy()&&!/^https:\/\/\S+$/.test(OURA.proxy())){toast("Die Brücken-Adresse beginnt mit https://");return}OURA.authorize();return}
+  if(a==="oura-out"){store.del("nw_oura_tok");openOv("oura");return}
+  if(a==="demo"){DATA=demoData();saveData("demo");rebuild();toast("Beispieldaten geladen");return}
+  if(a==="code-apply"){const v=($("#codeIn")||{}).value||"";try{await importCode(v);closeOv()}catch(x){toast(x.message)}return}
+  if(a==="export"){const blob=new Blob([JSON.stringify({v:1,d:DATA,diary:diary()},null,1)],{type:"application/json"});
+    if(IN_CLAUDE){try{const dl=await window.claude.use("downloads");if(dl){await dl.save({filename:"nachtwerk-"+localKey()+".json",data:blob});return}}catch(x){}const c=await encodeData(DATA);try{await navigator.clipboard.writeText(c);toast("Als Code kopiert")}catch(y){toast("Sichern ist hier nicht möglich")}return}
+    const u=URL.createObjectURL(blob),l=document.createElement("a");l.href=u;l.download="nachtwerk-"+localKey()+".json";document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);return}
+  if(a==="import-file"){const f=$("#fileIn");f.onchange=async()=>{const file=f.files[0];if(!file)return;try{const o=JSON.parse(await file.text());if(!o.d||!Array.isArray(o.d.sleep))throw 0;DATA=mergeData(SOURCE.kind==="demo"?EMPTY:DATA,o.d);if(o.diary)store.set("nw_diary",{...o.diary,...diary()});saveData("file");rebuild();toast("Datei geladen");closeOv()}catch(x){toast("Die Datei ist keine Nachtwerk-Sicherung")}};f.click();return}
+  if(a==="wipe"){if(t.dataset.confirm!=="1"){t.dataset.confirm="1";t.textContent="Wirklich alles löschen? Noch mal tippen";return}
+    (()=>{try{return Object.keys(localStorage)}catch(e){return []}})().filter(k=>k.startsWith("nw_")).forEach(k=>store.del(k));DATA=mergeData(EMPTY,EMPTY);SOURCE={kind:null,at:null};rebuild();closeOv();toast("Alle Daten gelöscht");return}
+  if(a==="install"){const ev=INSTALL.deferred;INSTALL.deferred=null;$("#installHost").innerHTML="";if(ev){try{await ev.prompt();await ev.userChoice}catch(x){}}return}
+  if(a==="install-later"){store.set("nw_install_later",Date.now());$("#installHost").innerHTML="";return}
+  if(a==="checkin-save"){const key=localKey(),dd=diary();const cur=checkinDraft||dd[key];if(!cur||!cur.r)return;dd[key]={r:cur.r,tags:cur.tags||[],t:Date.now()};store.set("nw_diary",dd);checkinDraft=null;rebuild();toast("Check-in gespeichert");return}
+  if(a==="checkin-edit"){const e=diary()[localKey()]||{r:0,tags:[]};checkinDraft={r:e.r,tags:[...(e.tags||[])]};keepScroll(render);return}
+  if(a==="notes-save"){const all=store.get("nw_notes",{});all[nightKeyEvening()]={todo:$("#todoIn").value,worry:$("#worryIn").value,t:Date.now()};store.set("nw_notes",all);const k="nw_done_"+nightKeyEvening();const s=store.get(k,[]);if(!s.includes("parken"))store.set(k,[...s,"parken"]);closeOv();keepScroll(render);toast("Geparkt. Gute Nacht");return}
+  if(a==="breath-start"){startBreath(d.kind);return}
+  if(a==="shuffle-start"){startShuffle();return}
+  if(a==="scan-start"){startScan();return}
+  if(a==="shift-start"){const from=Math.round(M.wakeMean/15)*15,to=store.get("nw_wake",from);store.set("nw_shift",{from,to,start:localKey()});rebuild();toast("Los geht's: alle 3 Tage 15 Minuten");return}
+  if(a==="ics"){const blob=new Blob([makeICS()],{type:"text/calendar"}),u=URL.createObjectURL(blob),l=document.createElement("a");l.href=u;l.download="nachtwerk-erinnerungen.ics";document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast("Datei öffnen und in den Kalender übernehmen");return}
+  if(a==="dst-plan"){store.set("nw_dst",d.date);store.set("nw_dst_delta",Number(d.delta)||-60);keepScroll(render);toast("Eingeplant");return}
+  if(a==="shift-stop"){store.del("nw_shift");rebuild();return}
+});
+document.addEventListener("input",e=>{if(e.target.id==="nameIn"){store.set("nw_name",e.target.value.trim().slice(0,30))}});
+document.addEventListener("change",e=>{if(e.target.id==="nameIn")keepScroll(render)});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ovKind)closeOv()});
+
+/* Schieben zum Starten */
+function initSlider(sl){
+  const th=$("#thumb");if(sl.classList.contains("done")){th.style.left=(sl.clientWidth-50)+"px";return}
+  let drag=false,x0=0,max=0;
+  const set=px=>{th.style.left=(6+px)+"px"};
+  const finish=()=>{store.set("nw_started",nightKeyEvening());if(CFG.night!=="aus")document.documentElement.classList.add("night");setTimeout(()=>{keepScroll(render);toast("Abendmodus an. Schlaf gut")},380)};
+  th.onpointerdown=e=>{drag=true;x0=e.clientX;max=sl.clientWidth-56;th.setPointerCapture(e.pointerId);th.style.transition="none"};
+  th.onpointermove=e=>{if(!drag)return;set(clamp(e.clientX-x0,0,max))};
+  const end=e=>{if(!drag)return;drag=false;const px=clamp(e.clientX-x0,0,max);th.style.transition="left .35s cubic-bezier(.22,1,.36,1)";
+    if(px>max*.85){set(max);finish()}else set(0)};
+  th.onpointerup=end;th.onpointercancel=end;
+  th.onkeydown=e=>{if(e.key==="Enter"||e.key===" "||e.key==="ArrowRight"){e.preventDefault();set(sl.clientWidth-56);finish()}};
+}
+
+/* ===== Sternenhimmel ===== */
+(function stars(){
+  const c=$("#stars"),x=c.getContext("2d");let S=[];
+  const size=()=>{const d=Math.min(2,window.devicePixelRatio||1);c.width=innerWidth*d;c.height=innerHeight*d;x.setTransform(d,0,0,d,0,0);
+    S=Array.from({length:Math.round(innerWidth*innerHeight/9000)},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.1+.2,p:Math.random()*6.28,s:.4+Math.random()}))};
+  size();addEventListener("resize",size);
+  const still=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const draw=t=>{x.clearRect(0,0,innerWidth,innerHeight);S.forEach(s=>{x.globalAlpha=.25+.45*(still?.6:(Math.sin(t/1000*s.s+s.p)*.5+.5));x.fillStyle="#fff";x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fill()});if(!still&&!document.hidden)requestAnimationFrame(draw);else if(!still)document.addEventListener("visibilitychange",()=>requestAnimationFrame(draw),{once:true})};
+  requestAnimationFrame(draw);
+})();
+
+/* ===== Start ===== */
+function tick(){
+  // Zeitzone neu lesen: Die App kann über die Zeitumstellung hinweg offen bleiben
+  const o=new Date().getTimezoneOffset();if(o!==NOW_OFF){NOW_OFF=o;M=build(DATA)}
+  applyDst();applyNight();if(tab==="heute"||tab==="rhythmus")keepScroll(render);
+}
+(async function start(){
+  let redirected=false,tokImported=false;
+  if(!IN_CLAUDE){
+    redirected=OURA.handleRedirect();
+    const h=location.hash;
+    if(h.startsWith("#import=")){history.replaceState(null,"",location.pathname+location.search);
+      if(confirm("Daten aus diesem Link in Nachtwerk übernehmen? Bestätige nur, wenn du den Link selbst in Nachtwerk erstellt hast.")){
+        try{tokImported=(await importCode(h.slice(8)))==="token";if(isIOS()&&!isStandalone())setTimeout(()=>toast("Safari und die installierte App speichern getrennt. Füge den Code in der App ein."),2600)}catch(e){toast(e.message)}}}
+  }
+  M=build(DATA);
+  applyDst();
+  render();
+  if(IN_CLAUDE) connectLive();
+  else if(!redirected&&!tokImported&&OURA.token()&&(!SOURCE.at||Date.now()-SOURCE.at>3*3600e3)) OURA.sync().catch(e=>{ouraError=e.message});
+  setInterval(tick,5*60*1000);
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)return;tick();if(ovKind==="wach")OVINIT.wach.check?.()});
+})();
+</script>
+</body>
+</html>

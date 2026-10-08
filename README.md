@@ -8,6 +8,7 @@ Dieses Repo ist das Backup mit Versionsgeschichte.
 | `gehirnatlas/` | [Gehirnatlas](https://claude.ai/artifact/WQLJBEcPFpwG9hVRvv7UBh) | Hauptapp: Gehirn 2D/3D, Neuron, Synapse, Botenstoffe, Nervensystem, Sehen, Schlaf, Stress, Methoden, Fächer, Karteikarten (FSRS), Fälle, Quiz, Probeprüfung mit Themen-Tests und großer Probeklausur pro Modul, Lernwissenschaft |
 | `studienplaner/` | [Modul 1 · Studienplaner WS 26/27](https://claude.ai/artifact/LxA83W7tpEgN47kd476Xqy) | Checkliste, Kurse, Wochenplan und Fristen für Modul 1 |
 | `sprechwerk/` | [Sprechwerk Daily](https://claude.ai/artifact/PLTMW3jcPoWe6HKS7a9J6p), [als Handy-App](https://ferdawsyousuf-stack.github.io/psychologie-lern-app/sprechwerk/) | Tägliches Sprechtraining: Atem, Aufmerksamkeit, Tempo, Stimme, Mission des Tages, Bühne, automatische Aufnahme; Bereich „Mut“ mit Angst-Leiter, Gedanken-Check, 15 Mut-Übungen, Erfolgs-Tagebuch, Gesprächs-Startern und 20 Wissenskarten |
+| `nachtwerk/` | [Nachtwerk Schlaf](https://claude.ai/artifact/VoWMhvKCFxVMBFu2P6drAo), [als Handy-App](https://ferdawsyousuf-stack.github.io/psychologie-lern-app/nachtwerk/) | Schlaf-Coach aus den Oura-Daten: Schlafwert, Schlafschuld, Chronotyp (MCTQ), Schlaf-Regelmäßigkeit (SRI), Energiekurve nach dem Zwei-Prozess-Modell, Wochen-Coach nach KVT-I, Abendplan, Morgen-Check-in mit persönlichen Experimenten, Atem- und Einschlaf-Werkzeuge, Nachtfilter |
 
 `gehirnatlas/index.html` ist der Seitenquelltext ohne den Dokumentrahmen, den claude.ai beim Veröffentlichen ergänzt.
 `gehirnatlas/lib/` enthält pdf.js für den PDF-Import eigener Karteikarten.
@@ -29,6 +30,19 @@ beim Sprechen automatisch auf. Der Fortschritt bleibt auf dem Handy.
 `sprechwerk/index.html` ist gebaut (React eingebettet). Der Quellcode liegt in `sprechwerk/quellcode/`
 (React 18, Tailwind, Vite, TypeScript); `npm install && npm run build` dort erzeugt die Web-App in `dist/`.
 `.nojekyll` sorgt dafür, dass GitHub Pages alle Dateien unverändert ausliefert.
+
+## Nachtwerk als Handy-App
+
+`nachtwerk/` ist eine installierbare Web-App wie Sprechwerk (gleiche Pages-Einstellung). Sie enthält keine
+Schlafdaten. Die kommen auf dem Handy dazu und bleiben dort im Browser-Speicher:
+
+- **Code aus Claude:** Im Nachtwerk-Artifact auf „Aufs Handy übertragen“ tippen, Code kopieren, in der App einfügen.
+- **Direkt von Oura:** einmalig eine Oura-App und eine kleine Brücke (Cloudflare Worker) anlegen, siehe
+  [`nachtwerk/oura-proxy/ANLEITUNG.md`](nachtwerk/oura-proxy/ANLEITUNG.md). Oura erlaubt keine Abrufe direkt aus dem Browser.
+
+`nachtwerk/index.html`, `sw.js` und `manifest.webmanifest` sind gebaut. Quelle ist `nachtwerk/quellcode/app.html`;
+`python3 build.py` dort baut die Web-App neu. Die Artifact-Fassung entsteht mit `--artifact` und einem Datenstand,
+der nicht ins Repo gehört.
 
 ## Lerninhalte
 
