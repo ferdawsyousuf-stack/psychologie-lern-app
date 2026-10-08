@@ -1,0 +1,310 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Weiße Seite wie im Design. Auf Handy-Breite füllt die App den Bildschirm,
+   dann übernimmt die Seite den Ton des Hintergrunds.
+   Bewusst außerhalb von @layer, damit diese Regeln das Grundgerüst der Seite überschreiben. */
+:root {
+  --page: #ffffff;
+  --phone: #8a9aaa;
+  --bezel: #1a1a1e;
+  color-scheme: light;
+}
+
+@media (max-width: 439px) {
+  :root {
+    --page: #6e7f8f;
+  }
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--page);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100%;
+}
+
+* {
+  font-family: 'Helvetica Now Var', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Die Bühne nutzt Inter (Google Fonts), wie im zweiten Design. */
+.font-inter,
+.font-inter * {
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.9);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Handy-Rahmen */
+  .phone {
+    position: relative;
+    width: 375px;
+    height: 780px;
+    border-radius: 52px;
+    background: var(--phone);
+    overflow: hidden;
+    isolation: isolate;
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 255, 255, 0.08),
+      0 0 0 1px rgba(0, 0, 0, 0.6),
+      0 0 0 10px var(--bezel),
+      0 0 0 11px rgba(255, 255, 255, 0.06),
+      0 0 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .phone--compact {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .dynamic-island {
+    position: absolute;
+    top: 11px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 32px;
+    border-radius: 9999px;
+    background: #000;
+    z-index: 50;
+  }
+
+  /* Liquid Glass */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.01);
+    background-blend-mode: luminosity;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    border: none;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 255, 255, 0.15) 20%,
+      rgba(255, 255, 255, 0) 40%,
+      rgba(255, 255, 255, 0) 60%,
+      rgba(255, 255, 255, 0.15) 80%,
+      rgba(255, 255, 255, 0.45) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .liquid-glass-selected {
+    background: rgba(255, 255, 255, 0.12);
+    background-blend-mode: luminosity;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: none;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .liquid-glass-selected::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.6) 0%,
+      rgba(255, 255, 255, 0.25) 20%,
+      rgba(255, 255, 255, 0) 40%,
+      rgba(255, 255, 255, 0) 60%,
+      rgba(255, 255, 255, 0.25) 80%,
+      rgba(255, 255, 255, 0.6) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Ersatz-Hintergrund, falls das Bild nicht geladen werden darf (z. B. auf claude.ai) */
+  .bg-fallback {
+    background-color: #6f8091;
+    background-image:
+      radial-gradient(70% 36% at 50% 76%, rgba(240, 214, 150, 0.55) 0%, rgba(214, 186, 128, 0.22) 45%, rgba(214, 186, 128, 0) 75%),
+      radial-gradient(60% 45% at 86% 10%, rgba(200, 213, 225, 0.5) 0%, rgba(200, 213, 225, 0) 70%),
+      radial-gradient(70% 50% at 6% 32%, rgba(88, 106, 124, 0.55) 0%, rgba(88, 106, 124, 0) 70%),
+      radial-gradient(120% 40% at 50% 106%, rgba(50, 62, 76, 0.85) 0%, rgba(50, 62, 76, 0) 70%),
+      linear-gradient(180deg, #748596 0%, #7f909f 36%, #788999 58%, #5b6b7b 100%);
+  }
+
+  .fade-up {
+    opacity: 0;
+    animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .sheet-in {
+    animation: sheetIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .pop {
+    display: inline-block;
+    animation: pop 0.35s ease-out;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hyphens {
+    -webkit-hyphens: auto;
+    hyphens: auto;
+  }
+
+  .balance {
+    text-wrap: balance;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nod {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-2px);
+  }
+  90% {
+    transform: translateY(1px);
+  }
+}
+
+.nod {
+  animation: nod 2.2s ease-in-out infinite;
+}
+
+/* Roter Punkt, solange aufgenommen wird. */
+@keyframes recPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.rec-dot {
+  animation: recPulse 1.2s ease-in-out infinite;
+}
+
+/* Hinweis „Sprechwerk als App“: dichteres Glas, damit der Text auf jedem Hintergrund lesbar bleibt. */
+.install-card {
+  background: rgba(38, 48, 60, 0.86);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.14),
+    0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.install-step {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .sheet-in,
+  .pop,
+  .nod,
+  .rec-dot {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

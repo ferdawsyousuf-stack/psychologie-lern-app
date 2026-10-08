@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#93a3b2"/>
+      <stop offset="0.55" stop-color="#768797"/>
+      <stop offset="1" stop-color="#55657a"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.82" cy="0.08" r="0.55">
+      <stop offset="0" stop-color="#dfe7ee" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#dfe7ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gold" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#dcc850" stop-opacity="0.85"/>
+      <stop offset="0.42" stop-color="#b4a028" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#b4a028" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orb" cx="0.5" cy="0.32" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.04"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#sheen)"/>
+  <ellipse cx="512" cy="530" rx="430" ry="330" fill="url(#gold)"/>
+  <circle cx="512" cy="512" r="250" fill="url(#orb)"/>
+  <circle cx="512" cy="512" r="250" fill="none" stroke="#ffffff" stroke-opacity="0.42" stroke-width="7"/>
+  <circle cx="512" cy="512" r="300" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="5"/>
+  <g stroke="#ffffff" stroke-width="40" stroke-linecap="round">
+    <line x1="352" y1="472" x2="352" y2="552"/>
+    <line x1="432" y1="402" x2="432" y2="622"/>
+    <line x1="512" y1="342" x2="512" y2="682"/>
+    <line x1="592" y1="412" x2="592" y2="612"/>
+    <line x1="672" y1="472" x2="672" y2="552"/>
+  </g>
+</svg>
