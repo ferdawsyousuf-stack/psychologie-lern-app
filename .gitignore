@@ -1,0 +1,4 @@
+# Oura-Rohdaten für das Postfach gehören nie ins Repo
+sleep.json
+readiness.json
+activity.json

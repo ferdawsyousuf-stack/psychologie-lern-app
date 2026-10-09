@@ -277,6 +277,10 @@ details.set>summary::-webkit-details-marker{display:none}
 details.set>summary .ic{width:16px;height:16px;color:var(--rose)}
 details.set>summary::after{content:"+";margin-left:auto;opacity:.6}
 details.set[open]>summary::after{content:"–"}
+details.sub{margin-top:12px}
+details.sub>summary{cursor:pointer;list-style:none;font-size:12.5px;color:rgba(255,255,255,.7);text-decoration:underline}
+details.sub>summary::-webkit-details-marker{display:none}
+#boxOut{word-break:break-all;resize:none}
 .set ol{margin:8px 0 0;padding-left:18px;font-size:12.5px;font-weight:300;line-height:1.55;color:rgba(255,255,255,.75)}
 .set code{font-size:11.5px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:6px;word-break:break-all}
 
@@ -719,6 +723,8 @@ let animate=true; // Einblenden nur beim ersten Bild und beim Tab-Wechsel, nicht
 function setTab(t){tab=t;store.set("nw_tab",t);closeOv();animate=true;render();$("#screen").scrollTo({top:0})}
 function keepScroll(fn){const y=$("#screen").scrollTop;fn();$("#screen").scrollTop=y}
 
+// Vor dem Aufstehen ist die Nacht von gestern die neueste, die es geben kann
+function boxExp(){const now=new Date(),nm=now.getHours()*60+now.getMinutes();return nm<planTimes().wake+60?addDays(localKey(),-1):localKey()}
 function srcLine(){
   if(!M) return "";
   const lastDate=M.last.date;
@@ -734,7 +740,7 @@ function srcLine(){
   if(IN_CLAUDE&&liveState.btn) action=`<button data-act="live">${liveState.btn}</button>`;
   else if(!IN_CLAUDE){const left=OURA.daysLeft();action=moved?"":expired?`<button data-open="oura">Neu anmelden</button>`:left!=null&&left<=3?`<button data-open="oura">Oura-Anmeldung läuft ab</button>`:OURA.token()?`<button data-act="sync">Aktualisieren</button>`:BOX.key()?`<button data-act="box-check">Neu laden</button>`:`<button data-open="oura">Neue Daten holen</button>`}
   return `<div class="srcbar"><span class="pulse ${live&&!stale?"live":""}"></span>
-  <span>${SOURCE.kind==="post"?"Von Oura":live?"Live von Oura":"Datenstand"} · letzte Nacht ${fmtDate(lastDate)}${moved?" · die Oura-Anmeldung ist jetzt in der App":expired&&days>=1?" · Oura-Anmeldung abgelaufen":days===1?" · die letzte Nacht fehlt noch: Oura-App öffnen":days>=2?` · Ring seit ${days} Tagen nicht synchronisiert`:""}</span>${action}</div>`;
+  <span>${SOURCE.kind==="post"?"Von Oura":live?"Live von Oura":"Datenstand"} · letzte Nacht ${fmtDate(lastDate)}${moved?" · die Oura-Anmeldung ist jetzt in der App":expired&&days>=1?" · Oura-Anmeldung abgelaufen":days===1?(SOURCE.kind==="post"&&BOX.key()?(nm<12*60?" · die neue Nacht kommt bis Mittag. Öffne vorher die Oura-App":" · die letzte Nacht kam heute nicht an. Sie kommt morgen mit, öffne vorher die Oura-App"):" · die letzte Nacht fehlt noch: Oura-App öffnen"):days>=2?` · Ring seit ${days} Tagen nicht synchronisiert`:""}</span>${action}</div>`;
 }
 function appbar(){
   return `<div class="appbar fu" style="animation-delay:.05s">
@@ -768,8 +774,8 @@ function screenEmpty(){
   <h1 class="title fu" style="animation-delay:.15s">Willkommen bei <em>Nachtwerk</em>.</h1>
   <p class="lead fu" style="animation-delay:.2s">Hier entsteht dein persönlicher Schlafplan aus deinen Oura-Daten. Alles bleibt auf diesem Gerät.</p>
   <div class="stack" style="margin-top:22px">
-    <button class="card liquid-glass lever fu" style="text-align:left;animation-delay:.3s" data-open="code"><div class="icw">${ic("clipboard")}</div><div><h3>Code aus Claude einfügen</h3><p>Öffne Nachtwerk in Claude, tippe auf „Aufs Handy übertragen“ und füge den Code hier ein. Geht sofort.</p></div></button>
-    <button class="card liquid-glass lever fu" style="text-align:left;animation-delay:.38s" data-open="oura"><div class="icw">${ic("link")}</div><div><h3>Direkt mit Oura verbinden</h3><p>Einmal einrichten, danach holt die App deine Nächte selbst.</p></div></button>
+    ${!IN_CLAUDE?`<button class="card liquid-glass lever fu" style="text-align:left;animation-delay:.3s" data-open="oura"><div class="icw">${ic("cloud-moon")}</div><div><h3>${BOX.key()?"Postfach eingerichtet":"Automatisch jeden Vormittag"}</h3><p>${BOX.key()?"Schick Claude deinen Postfach-Code. Dann kommen deine Nächte von selbst.":"Einmal einrichten und Claude einen Code schicken. Danach kommen deine Nächte von selbst."}</p></div></button>`:""}
+    <button class="card liquid-glass lever fu" style="text-align:left;animation-delay:.38s" data-open="code"><div class="icw">${ic("clipboard")}</div><div><h3>Code aus Claude einfügen</h3><p>Öffne Nachtwerk in Claude, tippe auf „Aufs Handy übertragen“ und füge den Code hier ein. Geht sofort.</p></div></button>
     <button class="card liquid-glass lever fu" style="text-align:left;animation-delay:.46s" data-act="demo"><div class="icw">${ic("sparkles")}</div><div><h3>Mit Beispieldaten ansehen</h3><p>Erfundene Nächte, nur zum Ausprobieren. Du kannst sie jederzeit ersetzen.</p></div></button>
   </div>`;
 }
@@ -1255,7 +1261,7 @@ const OV={
       <p class="tiny">Für die Nacht zählt die Helligkeit mehr als die Farbe. Stell am Handy zusätzlich „Extra dunkel“ (Android) oder „Weißpunkt reduzieren“ (iPhone) ein.</p>
     </div>
     ${!IN_CLAUDE?`<div class="set liquid-glass"><h3>${ic("download")}App installieren</h3><p>${installHint()}</p>${INSTALL.deferred?`<div class="btnrow"><button class="cta solid" data-act="install">Installieren</button></div>`:""}</div>`:""}
-    <div class="set liquid-glass"><h3>${ic("lock")}Privatsphäre</h3><p>Deine Schlafdaten bleiben auf diesem Gerät. ${IN_CLAUDE?"In Claude liest die Seite deine Oura-Daten nur mit deiner Erlaubnis.":"Ein Abruf direkt von Oura läuft nur über deine eigene Brücke, die nichts speichert."}</p>${!IN_CLAUDE&&M?`<div class="btnrow"><button class="pillbtn liquid-glass" data-act="wipe">Alle Daten löschen</button></div>`:""}</div>
+    <div class="set liquid-glass"><h3>${ic("lock")}Privatsphäre</h3><p>Deine Schlafdaten bleiben auf diesem Gerät. ${IN_CLAUDE?"In Claude liest die Seite deine Oura-Daten nur mit deiner Erlaubnis.":[BOX.key()?"Das Postfach bringt deine Nächte verschlüsselt. Öffnen kann sie nur dieses Handy.":"",OURA.token()||OURA.proxy()?"Ein Abruf direkt von Oura läuft nur über deine eigene Brücke, die nichts speichert.":""].filter(Boolean).join(" ")}</p>${!IN_CLAUDE&&M?`<div class="btnrow"><button class="pillbtn liquid-glass" data-act="wipe">Alle Daten löschen</button></div>`:""}</div>
     <p class="tiny" style="text-align:center;margin-top:18px">Nachtwerk ersetzt keine ärztliche Beratung.</p>
   </div>`,
   handy:()=>`${head("Aufs Handy übertragen")}<div class="ovbody">
@@ -1268,8 +1274,8 @@ const OV={
   </div>`,
   code:()=>`${head("Code einfügen")}<div class="ovbody">
     ${IS_PWA&&isIOS()&&!isStandalone()?`<div class="set liquid-glass"><h3>${ic("info")}Erst installieren</h3><p>Auf dem iPhone hat die App vom Home-Bildschirm einen eigenen Speicher. Installiere Nachtwerk zuerst (Teilen → „Zum Home-Bildschirm“) und füge den Code dann dort ein.</p></div>`:""}
-    <div class="set liquid-glass"><h3>${ic("clipboard")}Code aus Claude oder Anmelde-Code</h3><ol><li>Öffne Nachtwerk in Claude (am Computer oder Handy).</li><li>Menü → „Aufs Handy übertragen“ → „Code kopieren“.</li><li>Hier lang tippen → Einfügen → Übernehmen.</li></ol>
-      <p class="tiny">Den Anmelde-Code aus Safari (beginnt mit NWT.) fügst du auch hier ein. Er gehört nur hierher, nie in einen Chat.</p>
+    <div class="set liquid-glass"><h3>${ic("clipboard")}${OURA.proxy()||OURA.token()?"Code aus Claude oder Anmelde-Code":"Code aus Claude"}</h3><ol><li>Öffne Nachtwerk in Claude (am Computer oder Handy).</li><li>Menü → „Aufs Handy übertragen“ → „Code kopieren“.</li><li>Hier lang tippen → Einfügen → Übernehmen.</li></ol>
+      ${OURA.proxy()||OURA.token()?`<p class="tiny">Den Anmelde-Code aus Safari (beginnt mit NWT.) fügst du auch hier ein. Er gehört nur hierher, nie in einen Chat.</p>`:""}
       <textarea class="glass-input" id="codeIn" rows="5" placeholder="NW1.… oder NWT.…" style="margin-top:12px;font-size:12px" data-autofocus></textarea>
       <div class="btnrow"><button class="cta solid" data-act="code-apply">Übernehmen</button></div></div>
   </div>`,
@@ -1343,13 +1349,15 @@ async function encodeData(D){
   try{if(window.CompressionStream){const cs=new Blob([json]).stream().pipeThrough(new CompressionStream("deflate-raw"));const u=new Uint8Array(await new Response(cs).arrayBuffer());return "NW1."+b64u.enc(u)}}catch(e){}
   return "NW0."+b64u.enc(new TextEncoder().encode(json));
 }
-async function decodeData(code){
+async function decodeData(code,raw){
   code=String(code).trim().replace(/\s+/g,"");
+  if(/^NWK\./.test(code)) throw new Error("Das ist dein Postfach-Code. Der gehört nicht hierher, sondern in den Chat mit Claude.");
   const m=code.match(/NW([01])\.([A-Za-z0-9_-]+)/);if(!m) throw new Error("Das sieht nicht wie ein Nachtwerk-Code aus.");
   let u=b64u.dec(m[2]);
   if(m[1]==="1"){const ds=new Blob([u]).stream().pipeThrough(new DecompressionStream("deflate-raw"));u=new Uint8Array(await new Response(ds).arrayBuffer())}
   const o=JSON.parse(new TextDecoder().decode(u));
   if(!o||!o.d||!Array.isArray(o.d.sleep)) throw new Error("Der Code enthält keine Schlafdaten.");
+  if(raw) return o;
   if(o.p){if(o.p.name&&!store.get("nw_name",null))store.set("nw_name",String(o.p.name).slice(0,30));if(o.p.need&&store.get("nw_need",null)==null)store.set("nw_need",clamp(Number(o.p.need)||450,360,600))}
   return o.d;
 }
@@ -1514,21 +1522,46 @@ const OURA={
    (quellcode/post.mjs) und legt sie als post/<id>.json neben die App. Öffnen kann sie nur der private
    Schlüssel, und der verlässt dieses Gerät nie. */
 const BOX_INFO="nachtwerk-post-1";
+// Der private Schlüssel liegt als CryptoKey in IndexedDB und lässt sich nicht auslesen, auch nicht von Nachtwerk selbst
+const KDB={
+  db:()=>new Promise((res,rej)=>{const r=indexedDB.open("nw_box",1);r.onupgradeneeded=()=>r.result.createObjectStore("k");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);r.onblocked=()=>rej(new Error("blocked"))}),
+  async run(mode,fn){const db=await KDB.db();try{return await new Promise((res,rej)=>{const tx=db.transaction("k",mode),q=fn(tx.objectStore("k"));tx.oncomplete=()=>res(q.result);tx.onerror=tx.onabort=()=>rej(tx.error||new Error("idb"))})}finally{db.close()}},
+  get:id=>KDB.run("readonly",st=>st.get(id)),
+  put:(id,v)=>KDB.run("readwrite",st=>st.put(v,id)),
+  del:id=>KDB.run("readwrite",st=>st.delete(id)).catch(()=>{}),
+  wipe:()=>new Promise(res=>{try{const r=indexedDB.deleteDatabase("nw_box");r.onsuccess=r.onerror=r.onblocked=()=>res()}catch(e){res()}}),
+};
 const BOX={
-  key:()=>{const k=store.get("nw_box",null);return k&&k.pub&&k.priv&&k.id?k:null},
+  key:()=>{const k=store.get("nw_box",null);return k&&k.pub&&k.id&&(k.priv||k.idb)?k:null},
+  id8:()=>{const k=BOX.key();return k?k.id.slice(0,8):""},
   async setup(){
     if(BOX.key())return BOX.key();
-    const kp=await crypto.subtle.generateKey({name:"ECDH",namedCurve:"P-256"},true,["deriveBits"]);
+    if(!window.indexedDB||!crypto.subtle)throw new Error("idb");
+    const kp=await crypto.subtle.generateKey({name:"ECDH",namedCurve:"P-256"},false,["deriveBits"]);
     const raw=new Uint8Array(await crypto.subtle.exportKey("raw",kp.publicKey));
-    const priv=await crypto.subtle.exportKey("jwk",kp.privateKey);
     // Hex statt Base64: GitHub Pages veröffentlicht keine Dateien, die mit „_“ beginnen
     const id=[...new Uint8Array(await crypto.subtle.digest("SHA-256",raw))].map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
-    const k={pub:b64u.enc(raw),priv,id,t:Date.now()};store.set("nw_box",k);return k;
+    await KDB.put(id,kp.privateKey);
+    if(!(await KDB.get(id)))throw new Error("idb");
+    store.set("nw_box",{pub:b64u.enc(raw),id,t:Date.now(),idb:1});
+    if(!BOX.key())throw new Error("store");
+    return BOX.key();
+  },
+  async priv(k){
+    // Ältere Fassung: Schlüssel lag lesbar im Browser-Speicher. Einmal umziehen, danach dort löschen
+    if(k.priv){
+      const c=await crypto.subtle.importKey("jwk",k.priv,{name:"ECDH",namedCurve:"P-256"},false,["deriveBits"]);
+      try{await KDB.put(k.id,c);if(await KDB.get(k.id)){const {priv,...rest}=k;store.set("nw_box",{...rest,idb:1})}}catch(e){}
+      return c;
+    }
+    let c;try{c=await KDB.get(k.id)}catch(e){}
+    if(!c)throw new Error("nokey");
+    return c;
   },
   code:()=>{const k=BOX.key();return k?"NWK."+k.pub:""},
   async open(k,j){
     const enc=new TextEncoder(),epkRaw=b64u.dec(String(j.epk));
-    const priv=await crypto.subtle.importKey("jwk",k.priv,{name:"ECDH",namedCurve:"P-256"},false,["deriveBits"]);
+    const priv=await BOX.priv(k);
     const epk=await crypto.subtle.importKey("raw",epkRaw,{name:"ECDH",namedCurve:"P-256"},false,[]);
     const bits=await crypto.subtle.deriveBits({name:"ECDH",public:epk},priv,256);
     const hk=await crypto.subtle.importKey("raw",bits,"HKDF",false,["deriveKey"]);
@@ -1540,39 +1573,62 @@ const BOX={
   async check(manual){
     const k=BOX.key();if(!k)return 0;
     store.set("nw_box_at",Date.now());
+    const last=store.get("nw_box_last",null);
     const fail=msg=>{boxError=msg;if(manual)throw new Error(msg);return 0};
-    let r;try{r=await fetch("post/"+k.id+".json?t="+Date.now(),{cache:"no-store"})}catch(e){return fail("Keine Verbindung. Versuch es gleich noch mal.")}
-    if(r.status===404)return fail("Noch nichts angekommen. Hast du Claude den Code geschickt?");
-    if(!r.ok)return fail("Die Lieferung ließ sich gerade nicht laden. Versuch es später noch mal.");
-    let j;try{j=await r.json()}catch(e){return fail("Die Lieferung ließ sich gerade nicht laden. Versuch es später noch mal.")}
-    if(!j||j.id!==k.id)return fail("Die Lieferung passt nicht zu diesem Handy. Schick Claude den Code noch einmal.");
-    if(j.h&&j.h===store.get("nw_box_seen","")){boxError=null;return 0}
-    let d;try{d=await decodeData(await BOX.open(k,j))}catch(e){return fail("Die Lieferung passt nicht zu diesem Handy. Schick Claude den Code noch einmal.")}
-    d=cleanRows(d);
-    // Nächte im gelieferten Zeitraum ersetzen, damit geänderte Nächte von Oura gelten
-    const lo=d.sleep.reduce((a,x)=>x[0]<a?x[0]:a,"9999-99-99");
-    const base=SOURCE.kind==="demo"?EMPTY:{...DATA,sleep:d.sleep.length?DATA.sleep.filter(x=>x[0]<lo):DATA.sleep};
-    DATA=mergeData(base,d);saveData("post");
-    const night=d.sleep.reduce((a,x)=>x[0]>a?x[0]:a,"");
-    store.set("nw_box_seen",String(j.h||""));store.set("nw_box_last",{at:Number(j.t)||Date.now(),night});boxError=null;
-    rebuild();toast(d.sleep.length?`Oura: Nächte bis ${fmtDate(night)} angekommen`:"Lieferung angekommen");
-    return d.sleep.length||1;
+    try{
+      let r;try{r=await fetch("post/"+k.id+".json?t="+Date.now(),{cache:"no-store"})}catch(e){return fail("Keine Verbindung. Versuch es gleich noch mal.")}
+      if(r.status===404){
+        // Gerade eingerichtet: Claude hat den Code vielleicht noch nicht. Das ist kein Fehler
+        if(!last&&Date.now()-(k.t||0)<36*3600e3){boxError=null;if(manual)throw new Error("Noch nichts da. Die erste Lieferung kommt, sobald Claude deinen Postfach-Code hat.");return 0}
+        return fail(last?"Die Lieferung ist nicht mehr da. Schick Claude deinen Postfach-Code noch einmal.":"Noch nichts angekommen. Schick Claude deinen Postfach-Code in eurem Chat.")}
+      if(!r.ok)return fail("Die Lieferung ließ sich gerade nicht laden. Versuch es später noch mal.");
+      let j;try{j=await r.json()}catch(e){return fail("Die Lieferung ließ sich gerade nicht laden. Versuch es später noch mal.")}
+      if(!j||j.id!==k.id||String(j.ct||"").length>350000)return fail("Die Lieferung passt nicht zu diesem Handy. Schick Claude deinen Postfach-Code noch einmal.");
+      if(j.h&&j.h===store.get("nw_box_seen","")){boxError=null;return 0}
+      let o;try{o=await decodeData(await BOX.open(k,j),true)}catch(e){
+        if(e&&e.message==="nokey")return fail("Der Schlüssel auf diesem Handy fehlt. Tippe auf „Ausschalten“ und richte es neu ein.");
+        return fail("Die Lieferung passt nicht zu diesem Handy. Schick Claude deinen Postfach-Code noch einmal.")}
+      // Nur eine neuere Lieferung zählt. Eine ältere Datei darf keine neueren Nächte überschreiben
+      const tt=Number(o.t)||0;
+      if(last&&last.t&&tt<=last.t){store.set("nw_box_seen",String(j.h||""));boxError=null;return 0}
+      const d=cleanRows(o.d);
+      // Nächte im gelieferten Zeitraum ersetzen, damit geänderte Nächte von Oura gelten. Ältere bleiben
+      const lo=d.sleep.reduce((a,x)=>x[0]<a?x[0]:a,"9999-99-99"),hi=d.sleep.reduce((a,x)=>x[0]>a?x[0]:a,"");
+      const base=SOURCE.kind==="demo"?EMPTY:{...DATA,sleep:d.sleep.length?DATA.sleep.filter(x=>x[0]<lo||x[0]>hi):DATA.sleep};
+      DATA=mergeData(base,d);saveData("post");
+      store.set("nw_box_seen",String(j.h||""));store.set("nw_box_last",{at:Number(j.t)||Date.now(),night:hi,t:tt});boxError=null;
+      rebuild();toast(d.sleep.length?`Oura: Nächte bis ${fmtDate(hi)} angekommen`:"Lieferung angekommen");
+      return d.sleep.length||1;
+    }finally{boxRefresh()}
   },
+  async off(){const k=BOX.key();if(k)await KDB.del(k.id);["nw_box","nw_box_seen","nw_box_last","nw_box_at"].forEach(x=>store.del(x));boxError=null},
 };
 let boxError=null;
+// Wann kommt die fehlende Nacht? Claude sieht um 9:57 und 11:57 nach
+const boxNext=()=>new Date().getHours()<12?"Claude bringt sie bis Mittag. Öffne vorher die Oura-App.":"Sie kommt morgen Vormittag mit. Öffne vorher die Oura-App.";
+function boxRefresh(){const el=document.getElementById("boxSet");if(el&&ovKind==="oura")el.outerHTML=boxBlock()}
 function boxBlock(){
+  if(IN_CLAUDE)return "";
   const k=BOX.key(),last=store.get("nw_box_last",null),safari=IS_PWA&&isIOS()&&!isStandalone();
   const when=t=>new Date(t).toLocaleString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
-  if(!k)return `<div class="set liquid-glass"><h3>${ic("cloud-moon")}Am einfachsten: automatisch jeden Morgen</h3>
-    <p>Claude holt deine Nächte jeden Vormittag über deine Oura-Verbindung in Claude und bringt sie hierher. Unterwegs sind sie verschlüsselt. Öffnen kann sie nur dieses Handy.</p>
-    ${safari?`<p class="tiny">Du bist in Safari. Richte das lieber in der App vom Home-Bildschirm ein, denn die hat ihren eigenen Speicher.</p>`:""}
-    <ol><li>Tippe auf „Einrichten“.</li><li>Kopier den Code, der dann erscheint, und schick ihn Claude in eurem Chat. Er ist nicht geheim.</li><li>Fertig. Ab dann kommen deine Nächte von selbst.</li></ol>
+  const intro=`<p>Claude holt deine Nächte jeden Vormittag über deine Oura-Verbindung in Claude und bringt sie hierher. Unterwegs sind sie verschlüsselt. Öffnen kann sie nur dieses Handy.</p>`;
+  if(!k&&safari)return `<div class="set liquid-glass" id="boxSet"><h3>${ic("cloud-moon")}Am einfachsten: automatisch jeden Vormittag</h3>${intro}
+    <p>Richte das in der App vom Home-Bildschirm ein. Safari und die App haben getrennte Speicher, und nur die App behält den Schlüssel sicher.</p>
+    <ol><li>Unten auf ${ic("share")} Teilen tippen.</li><li>„Zum Home-Bildschirm“ wählen.</li><li>Nachtwerk vom Home-Bildschirm öffnen, Menü → „Daten von Oura“ → „Einrichten“.</li></ol>
+    <p class="tiny"><button class="linkbtn" data-act="box-setup">Trotzdem hier in Safari einrichten</button></p></div>`;
+  if(!k)return `<div class="set liquid-glass" id="boxSet"><h3>${ic("cloud-moon")}Am einfachsten: automatisch jeden Vormittag</h3>${intro}
+    <ol><li>Tippe auf „Einrichten“.</li><li>Kopier den Postfach-Code, der dann erscheint, und schick ihn Claude in eurem Chat. Er ist nicht geheim.</li><li>Fertig. Ab dann kommen deine Nächte von selbst.</li></ol>
     <div class="btnrow"><button class="cta solid" data-act="box-setup">Einrichten</button></div></div>`;
-  return `<div class="set liquid-glass"><h3>${ic("cloud-moon")}Automatisch jeden Morgen</h3>
-    <p>${last?`Zuletzt angekommen: ${when(last.at)}${last.night?`. Nächte bis ${fmtDate(last.night)}`:"."}`:"Eingerichtet. Schick Claude diesen Code in eurem Chat, falls noch nicht geschehen. Dann kommen deine Nächte hierher."}${boxError?`<br><span style="color:var(--bad)">${esc(boxError)}</span>`:""}</p>
-    <textarea class="glass-input" id="boxOut" rows="2" readonly style="margin-top:10px;font-size:11px">${BOX.code()}</textarea>
-    <div class="btnrow"><button class="cta solid" data-copy="box">${ic("copy")} Code kopieren</button><button class="pillbtn liquid-glass" data-act="box-check">${ic("refresh-cw")} Jetzt nachsehen</button></div>
-    <p class="tiny">Der Code ist nur zum Verschließen. Den Schlüssel zum Öffnen behält dieses Handy. Öffne morgens zuerst die Oura-App, damit die Nacht bei Oura ankommt. <button class="linkbtn" data-act="box-off">Ausschalten</button></p></div>`;
+  const codeBox=`<textarea class="glass-input" id="boxOut" rows="3" readonly style="margin-top:10px;font-size:11px">${BOX.code()}</textarea>`;
+  const err=boxError?`<p style="color:var(--bad)">${esc(boxError)}</p>`:"";
+  const foot=`<p class="tiny">Der Code ist nur zum Verschließen. Den Schlüssel zum Öffnen behält dieses Handy. Öffne morgens zuerst die Oura-App, damit die Nacht bei Oura ankommt.${safari?" Die App vom Home-Bildschirm hat einen eigenen Speicher und braucht ihr eigenes Postfach.":""} Postfach ${BOX.id8()} · <button class="linkbtn" data-act="box-off">Ausschalten</button></p>`;
+  if(!last)return `<div class="set liquid-glass" id="boxSet"><h3>${ic("cloud-moon")}Automatisch jeden Vormittag</h3>
+    <p>Eingerichtet. Schick Claude diesen Postfach-Code in eurem Chat. Die erste Lieferung kommt, sobald Claude ihn hat.</p>${err}${codeBox}
+    <div class="btnrow"><button class="cta solid" data-copy="box">${ic("copy")} Postfach-Code kopieren</button><button class="pillbtn liquid-glass" data-act="box-check">${ic("refresh-cw")} Jetzt nachsehen</button></div>${foot}</div>`;
+  return `<div class="set liquid-glass" id="boxSet"><h3>${ic("cloud-moon")}Automatisch jeden Vormittag</h3>
+    <p>Läuft. Zuletzt angekommen: ${when(last.at)}.${last.night?` Neueste Nacht: ${fmtDate(last.night)}`:""}</p>${err}
+    <div class="btnrow"><button class="cta solid" data-act="box-check">${ic("refresh-cw")} Jetzt nachsehen</button></div>
+    <details class="sub"><summary>Postfach-Code zeigen</summary>${codeBox}<div class="btnrow"><button class="pillbtn liquid-glass" data-copy="box">${ic("copy")} Postfach-Code kopieren</button></div></details>${foot}</div>`;
 }
 let ouraError=null;
 function ouraPanel(){
@@ -1585,7 +1641,7 @@ function ouraPanel(){
       ${iosApp?`<p class="tiny">Neu anmelden geht auf dem iPhone nur in Safari: Adresse kopieren, in Safari öffnen, dort anmelden und den neuen Anmelde-Code hier einfügen.</p>`:""}</div>`
       :ouraError?`<div class="set liquid-glass"><h3>${ic("info")}Das hat nicht geklappt</h3><p style="color:var(--bad)">${esc(ouraError)}</p></div>`:""}
     ${boxBlock()}
-    <div class="set liquid-glass"><h3>${ic("clipboard")}Oder von Hand: Code aus Claude</h3><p>Öffne Nachtwerk in Claude. Dort kommen deine Daten über die Oura-Verbindung. Tippe auf „Aufs Handy übertragen“ und füge den Code hier ein.</p><div class="btnrow"><button class="${BOX.key()?"pillbtn liquid-glass":"cta solid"}" data-open="code">Code einfügen</button></div></div>
+    <div class="set liquid-glass"><h3>${ic("clipboard")}Oder von Hand: Code aus Claude</h3><p>Öffne Nachtwerk in Claude. Tippe dort im Menü auf „Aufs Handy übertragen“ und dann auf „Code kopieren“. Füge den Code hier ein.</p><div class="btnrow"><button class="pillbtn liquid-glass" data-open="code">Code einfügen</button></div></div>
     <details class="set liquid-glass"${t?" open":""}><summary>${ic("link")}Fortgeschritten: eigene Brücke zu Oura</summary>
       <p>Oura lässt Web-Apps nicht direkt an die Daten. Darum braucht es zwei kostenlose Bausteine, etwa 30 Minuten Arbeit am Laptop. Danach lädt Nachtwerk deine Nächte selbst. <a href="${GUIDE_URL}" target="_blank" rel="noopener">Ausführliche Anleitung</a></p>
       <ol><li>Auf <a href="https://developer.ouraring.com/applications" target="_blank" rel="noopener">developer.ouraring.com</a> einen Zugang für Nachtwerk anlegen („Create New“). Bei Website, Privacy Policy, Terms of Service und Redirect URIs jeweils genau <code>${PWA_URL}</code>. Bei den Scopes nur „daily“ und „spo2“ anhaken, beide sind nötig. Dann unter „View Details“ <b>Client ID</b> und <b>Client Secret</b> ansehen.</li>
@@ -1757,9 +1813,10 @@ document.addEventListener("click",async e=>{
   if(a==="close"){closeOv();return}
   if(a==="live"){loadLiveOnce();return}
   if(a==="sync"){if(!OURA.token()){openOv("oura");return}toast("Lade von Oura …");try{await OURA.sync();ouraError=null}catch(x){ouraError=x.message;toast(x.message);if(x.code==="auth"){keepScroll(render);openOv("oura")}else if(ovKind==="oura")openOv("oura")}return}
-  if(a==="box-setup"){try{await BOX.setup();openOv("oura");toast("Jetzt den Code kopieren und Claude schicken")}catch(x){toast("Das geht in diesem Browser leider nicht.")}return}
-  if(a==="box-check"){toast("Sehe nach …");try{const n=await BOX.check(true);if(!n){const l=store.get("nw_box_last",null);toast(l&&l.night?`Schon aktuell: Nächte bis ${fmtDate(l.night)}`:"Noch nichts Neues da.")}}catch(x){toast(x.message)}if(ovKind==="oura")openOv("oura");else keepScroll(render);return}
-  if(a==="box-off"){if(!confirm("Automatisches Laden ausschalten? Deine Nächte bleiben in der App."))return;["nw_box","nw_box_seen","nw_box_last","nw_box_at"].forEach(k=>store.del(k));boxError=null;openOv("oura");keepScroll(render);toast("Ausgeschaltet");return}
+  if(a==="box-setup"){try{await BOX.setup();openOv("oura");keepScroll(render);toast("Jetzt den Postfach-Code kopieren und Claude schicken")}catch(x){toast("Das geht in diesem Browser leider nicht. Versuch es in der App vom Home-Bildschirm.")}return}
+  if(a==="box-check"){toast("Sehe nach …");try{const n=await BOX.check(true);if(!n){const l=store.get("nw_box_last",null),have=M&&M.last?M.last.date:l&&l.night;
+      toast(have&&have<boxExp()?"Noch keine neue Nacht. "+boxNext():have?`Schon aktuell: Nächte bis ${fmtDate(have)}`:"Noch nichts Neues da.")}}catch(x){toast(x.message)}keepScroll(render);return}
+  if(a==="box-off"){if(!confirm("Automatisch laden ausschalten? Deine Nächte bleiben in der App. Willst du es später wieder, schickst du Claude einen neuen Code."))return;const id8=BOX.id8();await BOX.off();openOv("oura");keepScroll(render);toast(`Ausgeschaltet. Sag Claude, dass Postfach ${id8} aufhören soll.`);return}
   if(a==="oura-login"){const c=$("#cidIn"),pi=$("#proxyIn");
     if(pi){const n=normProxy(pi.value);if(n===null){toast("Die Brücken-Adresse sieht so aus: https://name.konto.workers.dev");return}store.set("nw_oura_proxy",n)}
     if(c)store.set("nw_oura_cid",c.value.replace(/\s+/g,""));
@@ -1772,7 +1829,7 @@ document.addEventListener("click",async e=>{
     const u=URL.createObjectURL(blob),l=document.createElement("a");l.href=u;l.download="nachtwerk-"+localKey()+".json";document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);return}
   if(a==="import-file"){const f=$("#fileIn");f.onchange=async()=>{const file=f.files[0];if(!file)return;try{const o=JSON.parse(await file.text());if(!o.d||!Array.isArray(o.d.sleep))throw 0;DATA=mergeData(SOURCE.kind==="demo"?EMPTY:DATA,o.d);if(o.diary)store.set("nw_diary",{...o.diary,...diary()});saveData("file");rebuild();toast("Datei geladen");closeOv()}catch(x){toast("Die Datei ist keine Nachtwerk-Sicherung")}};f.click();return}
   if(a==="wipe"){if(t.dataset.confirm!=="1"){t.dataset.confirm="1";t.textContent="Wirklich alles löschen? Noch mal tippen";return}
-    (()=>{try{return Object.keys(localStorage)}catch(e){return []}})().filter(k=>k.startsWith("nw_")).forEach(k=>store.del(k));DATA=mergeData(EMPTY,EMPTY);SOURCE={kind:null,at:null};rebuild();closeOv();toast("Alle Daten gelöscht");return}
+    const id8=BOX.id8();(()=>{try{return Object.keys(localStorage)}catch(e){return []}})().filter(k=>k.startsWith("nw_")).forEach(k=>store.del(k));await KDB.wipe();boxError=null;DATA=mergeData(EMPTY,EMPTY);SOURCE={kind:null,at:null};rebuild();closeOv();toast(id8?`Alle Daten gelöscht. Sag Claude, dass Postfach ${id8} aufhören soll.`:"Alle Daten gelöscht");return}
   if(a==="install"){const ev=INSTALL.deferred;INSTALL.deferred=null;$("#installHost").innerHTML="";if(ev){try{await ev.prompt();await ev.userChoice}catch(x){}}return}
   if(a==="install-later"){store.set("nw_install_later",Date.now());$("#installHost").innerHTML="";return}
   if(a==="checkin-save"){const key=localKey(),dd=diary();const cur=checkinDraft||dd[key];if(!cur||!cur.r)return;dd[key]={r:cur.r,tags:cur.tags||[],t:Date.now()};store.set("nw_diary",dd);checkinDraft=null;rebuild();toast("Check-in gespeichert");return}
@@ -1837,7 +1894,9 @@ function tick(){
   render();
   if(IN_CLAUDE) connectLive();
   else{
-    if(BOX.key())BOX.check(false).catch(()=>{});
+    const bk=BOX.key();if(bk&&bk.priv)BOX.priv(bk).catch(()=>{});
+    if(bk)BOX.check(false).catch(()=>{});
+    if(isIOS())setTimeout(showInstallSheet,1800);
     if(!redirected&&!tokImported&&OURA.token()&&(!SOURCE.at||Date.now()-SOURCE.at>3*3600e3)) OURA.sync().catch(e=>{ouraError=e.message;if(e.code==="auth")keepScroll(render)});
   }
   setInterval(tick,5*60*1000);

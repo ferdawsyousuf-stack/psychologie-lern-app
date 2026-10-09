@@ -8,6 +8,8 @@
 // Für jeden Schlüssel entsteht <out>/post/<id>.json. Das Handy hat den passenden privaten Schlüssel
 // erzeugt und nie hergegeben; nur damit lässt sich die Datei öffnen (ECDH P-256, HKDF, AES-GCM).
 // Das Skript gibt keine Gesundheitswerte aus, nur Anzahl und Datum.
+// Die Rohdateien gehören nie ins Repo; ein Ordner darin wird abgelehnt.
+// Rückgabe: 0 fertig, 1 Fehler, 2 keine gültigen Nächte, 3 nur ein Teil der Schlüssel ging.
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -35,7 +37,8 @@ function args(argv) {
 function rows(dir, file, field) {
   const p = path.join(dir, file);
   if (!fs.existsSync(p)) return [];
-  const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+  let j;
+  try { j = JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { throw new Error(file + ' ist kein gültiges JSON'); }
   const list = Array.isArray(j) ? j : j && Array.isArray(j[field]) ? j[field] : null;
   if (!list) throw new Error(file + ': keine Liste „' + field + '“ gefunden');
   return list;
@@ -87,7 +90,7 @@ function collect(dir) {
   return { d: { sleep, ready, act, spo2: [] }, report };
 }
 
-async function seal(keyCode, json, outDir) {
+async function seal(keyCode, json, plainJson, outDir) {
   const m = String(keyCode || '').trim().match(/^NWK\.([A-Za-z0-9_-]{80,100})$/);
   if (!m) throw new Error('Schlüssel ungültig: ' + String(keyCode).slice(0, 12) + '…');
   const pubRaw = b64u.dec(m[1]);
@@ -95,10 +98,11 @@ async function seal(keyCode, json, outDir) {
   // Hex statt Base64: GitHub Pages veröffentlicht keine Dateien, die mit „_“ beginnen
   const id = createHash('sha256').update(pubRaw).digest('hex').slice(0, 24);
   const file = path.join(outDir, 'post', id + '.json');
-  // Gleiche Daten wie beim letzten Mal: nichts schreiben, damit kein leerer Commit entsteht
+  // Gleiche Daten wie beim letzten Mal: nichts schreiben, damit kein leerer Commit entsteht.
+  // h hängt nur an den Daten, nicht an der Uhrzeit, die verschlüsselt mitreist
   const h = b64u.enc(createHash('sha256').update(INFO + '|' + id + '|' + json).digest()).slice(0, 16);
   try { if (JSON.parse(fs.readFileSync(file, 'utf8')).h === h) return { id, file, changed: false }; } catch (e) {}
-  const plain = 'NW1.' + b64u.enc(zlib.deflateRawSync(Buffer.from(json, 'utf8'), { level: 9 }));
+  const plain = 'NW1.' + b64u.enc(zlib.deflateRawSync(Buffer.from(plainJson, 'utf8'), { level: 9 }));
   const recip = await subtle.importKey('raw', pubRaw, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
   const eph = await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
   const epk = new Uint8Array(await subtle.exportKey('raw', eph.publicKey));
@@ -108,29 +112,52 @@ async function seal(keyCode, json, outDir) {
   const iv = webcrypto.getRandomValues(new Uint8Array(12));
   const ct = new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv, additionalData: te.encode(id) }, aes, te.encode(plain)));
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify({ v: 1, id, t: Date.now(), h, epk: b64u.enc(epk), iv: b64u.enc(iv), ct: b64u.enc(ct) }) + '\n');
+  fs.writeFileSync(file, JSON.stringify({ v: 1, id, t: JSON.parse(plainJson).t, h, epk: b64u.enc(epk), iv: b64u.enc(iv), ct: b64u.enc(ct) }) + '\n');
   return { id, file, changed: true };
+}
+
+// Wurzel des Git-Repos, in dem das Skript liegt
+function repoRoot(from) {
+  for (let d = from; ; d = path.dirname(d)) {
+    if (fs.existsSync(path.join(d, '.git'))) return d;
+    if (path.dirname(d) === d) return null;
+  }
 }
 
 async function main() {
   const o = args(process.argv.slice(2));
   if (!o.in) throw new Error('--in <Ordner> fehlt');
-  const outDir = path.resolve(o.out || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'));
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const root = repoRoot(here), inDir = fs.realpathSync(path.resolve(o.in));
+  if (root) {
+    const rel = path.relative(fs.realpathSync(root), inDir);
+    if (!rel.startsWith('..') && !path.isAbsolute(rel)) throw new Error('--in liegt im Repo. Rohdaten gehören in einen Ordner außerhalb.');
+  }
+  const outDir = path.resolve(o.out || path.join(here, '..'));
   let keys = o.key;
   if (!keys.length) {
     const kf = path.join(outDir, 'post', 'keys.txt');
     keys = fs.existsSync(kf) ? fs.readFileSync(kf, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean) : [];
   }
   if (!keys.length) throw new Error('Kein Schlüssel: --key NWK.… oder post/keys.txt');
-  const { d, report } = collect(o.in);
+  const { d, report } = collect(inDir);
   console.log('Geprüft: ' + Object.entries(report).map(([k, v]) => `${k} ${v.ok} gut${v.dropped ? `, ${v.dropped} verworfen` : ''}`).join(' · '));
   if (!d.sleep.length) { console.log('Keine gültigen Nächte. Nichts geschrieben.'); process.exitCode = 2; return; }
   const last = d.sleep.reduce((a, r) => (r[0] > a ? r[0] : a), '');
   const json = JSON.stringify({ v: 1, d });
-  for (const k of keys) {
-    const r = await seal(k, json, outDir);
-    console.log(`${r.changed ? 'Neu' : 'Unverändert'}: post/${r.id}.json (${d.sleep.length} Nächte, letzte ${last})`);
+  // t reist verschlüsselt mit, damit das Handy eine ältere Lieferung erkennt
+  const plainJson = JSON.stringify({ v: 1, t: Date.now(), d });
+  let failed = 0;
+  for (const [i, k] of keys.entries()) {
+    try {
+      const r = await seal(k, json, plainJson, outDir);
+      console.log(`${r.changed ? 'Neu' : 'Unverändert'}: post/${r.id}.json (${d.sleep.length} Nächte, letzte ${last})`);
+    } catch (e) {
+      failed++;
+      console.error(`Fehler bei Schlüssel ${i + 1}: ${e.message}`);
+    }
   }
+  if (failed) process.exitCode = failed === keys.length ? 1 : 3;
 }
 
 main().catch((e) => { console.error('Fehler: ' + e.message); process.exitCode = 1; });
