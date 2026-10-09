@@ -1,0 +1,3 @@
+# Öffentliche Schlüssel der Handys (nicht geheim). Eine Zeile je Handy.
+# Handy 1, eingerichtet am 09.10.2026
+NWK.BDvejU0Q76Bim2qdAR4yllvYSjCfuSH8q89kNG9eVDn0ntgIPG_mvjW8onfcLJaOLN-UExytLTaOyIvMgKNSm9o
