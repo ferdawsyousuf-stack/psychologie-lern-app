@@ -34,10 +34,14 @@ beim Sprechen automatisch auf. Der Fortschritt bleibt auf dem Handy.
 ## Nachtwerk als Handy-App
 
 `nachtwerk/` ist eine installierbare Web-App wie Sprechwerk (gleiche Pages-Einstellung). Sie enthält keine
-Schlafdaten. Die kommen auf dem Handy dazu und bleiben dort im Browser-Speicher:
+lesbaren Schlafdaten. Die kommen auf dem Handy dazu und bleiben dort im Browser-Speicher:
 
+- **Automatisch (Postfach):** Die App erzeugt ein Schlüsselpaar und zeigt den öffentlichen Teil als Code `NWK.…`.
+  Mit ihm verschließt eine geplante Claude-Sitzung die Oura-Nächte aus der Oura-Verbindung in Claude
+  (`nachtwerk/quellcode/post.mjs`) und legt sie als `nachtwerk/post/<id>.json` ab. Öffnen kann sie nur das Handy,
+  denn der private Schlüssel verlässt es nie. `nachtwerk/post/keys.txt` listet die öffentlichen Schlüssel.
 - **Code aus Claude:** Im Nachtwerk-Artifact auf „Aufs Handy übertragen“ tippen, Code kopieren, in der App einfügen.
-- **Direkt von Oura:** einmalig einen Zugang bei Oura und eine kleine Brücke (Cloudflare Worker) anlegen, siehe
+- **Direkt von Oura (fortgeschritten):** einmalig einen Zugang bei Oura und eine kleine Brücke (Cloudflare Worker) anlegen, siehe
   [`nachtwerk/oura-proxy/ANLEITUNG.md`](nachtwerk/oura-proxy/ANLEITUNG.md). Oura erlaubt keine Abrufe direkt aus dem Browser,
   und die Anmeldung braucht das Client Secret. Das liegt nur verschlüsselt in der Brücke, nie in der App.
 
