@@ -2,7 +2,7 @@
 // Die App startet sofort aus dem Speicher (auch ohne Internet) und holt Neuerungen im Hintergrund;
 // sie gelten ab dem nächsten Start. Oura-Abrufe gehen immer direkt ins Netz.
 
-const VERSION = '706379169cc3';
+const VERSION = '33e8c034b7d5';
 const SHELL = 'nachtwerk-shell-' + VERSION;
 const RUNTIME = 'nachtwerk-runtime-v1';
 const SHELL_FILES = [
@@ -66,7 +66,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin === self.location.origin) {
-    // Der Oura-Rücksprung trägt die Anmeldung im #-Teil; der erreicht den Server nie, darum reicht index.html.
+    // Der Oura-Rücksprung (?code=…) zeigt auf diese Seite; index.html aus dem Speicher reicht, die App liest den Code selbst.
     // Andere Seiten im Ordner (Anleitung, Quellcode) gehen am Speicher vorbei, sonst ersetzen sie die App.
     if (request.mode === 'navigate') {
       if (url.pathname === SCOPE || url.pathname === SCOPE + 'index.html') cachedThenRefresh(event, SHELL, './index.html');

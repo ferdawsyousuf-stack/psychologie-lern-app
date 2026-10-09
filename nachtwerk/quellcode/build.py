@@ -25,7 +25,7 @@ HEAD = """<!doctype html>
 <meta name="apple-mobile-web-app-title" content="Nachtwerk">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.ouraring.com https://*.workers.dev; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.workers.dev; base-uri 'none'; form-action 'none'; object-src 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -100,7 +100,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin === self.location.origin) {
-    // Der Oura-Rücksprung trägt die Anmeldung im #-Teil; der erreicht den Server nie, darum reicht index.html.
+    // Der Oura-Rücksprung (?code=…) zeigt auf diese Seite; index.html aus dem Speicher reicht, die App liest den Code selbst.
     // Andere Seiten im Ordner (Anleitung, Quellcode) gehen am Speicher vorbei, sonst ersetzen sie die App.
     if (request.mode === 'navigate') {
       if (url.pathname === SCOPE || url.pathname === SCOPE + 'index.html') cachedThenRefresh(event, SHELL, './index.html');

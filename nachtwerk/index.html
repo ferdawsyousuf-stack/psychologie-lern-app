@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Nachtwerk">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.ouraring.com https://*.workers.dev; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.workers.dev; base-uri 'none'; form-action 'none'; object-src 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -278,7 +278,7 @@ label.fl{display:block;font-size:12px;color:rgba(255,255,255,.6);margin:14px 0 6
 .srcbar{display:flex;align-items:center;gap:8px;font-size:11.5px;color:rgba(255,255,255,.6);margin-top:14px;flex-wrap:wrap}
 .srcbar>span:nth-child(2){flex:1;min-width:0}
 .srcbar button{text-decoration:underline;text-underline-offset:3px;color:var(--rose);font-size:11.5px}
-.toast{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);transform:translate(-50%,20px);z-index:20;border-radius:99px;padding:11px 18px;font-size:13px;background:rgba(30,10,16,.92);box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.15);opacity:0;transition:all .35s cubic-bezier(.22,1,.36,1);pointer-events:none;white-space:nowrap;max-width:90%}
+.toast{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);transform:translate(-50%,20px);z-index:20;border-radius:18px;padding:11px 18px;font-size:13px;line-height:1.35;text-align:center;background:rgba(30,10,16,.92);box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.15);opacity:0;transition:all .35s cubic-bezier(.22,1,.36,1);pointer-events:none;white-space:normal;width:max-content;max-width:calc(100% - 32px)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .install{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-end;padding:12px 12px calc(env(safe-area-inset-bottom,0px) + 16px);background:rgba(0,0,0,.3)}
 .install .ic-card{width:100%;border-radius:32px;padding:20px;background:rgba(40,12,20,.86);-webkit-backdrop-filter:blur(24px) saturate(1.2);backdrop-filter:blur(24px) saturate(1.2);box-shadow:inset 0 1px 1px rgba(255,255,255,.14),0 18px 50px rgba(0,0,0,.35);animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both}
@@ -408,7 +408,7 @@ const fmtDate=s=>{const [y,m,d]=s.split("-");return d+"."+m+"."};
 const weekday=s=>new Date(s+"T12:00:00").getDay();
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),2400)}
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),Math.max(2400,t.length*55))}
 
 /* ===== Einstellungen ===== */
 const CFG={
@@ -720,12 +720,15 @@ function srcLine(){
   const now=new Date(),nm=now.getHours()*60+now.getMinutes(),exp=nm<planTimes().wake+60?addDays(localKey(),-1):localKey();
   const days=Math.round((new Date(exp+"T12:00:00")-new Date(lastDate+"T12:00:00"))/864e5);
   const stale=days>=1;
-  const live=SOURCE.kind==="live"||SOURCE.kind==="oura";
+  const expired=!IN_CLAUDE&&SOURCE.kind==="oura"&&!OURA.token();
+  // iPhone: Safari hat seine Anmeldung an die App vom Home-Bildschirm abgegeben. Das ist kein Ablauf
+  const moved=expired&&isIOS()&&!isStandalone()&&!!store.get("nw_oura_moved",0);
+  const live=SOURCE.kind==="live"||(SOURCE.kind==="oura"&&!expired);
   let action="";
   if(IN_CLAUDE&&liveState.btn) action=`<button data-act="live">${liveState.btn}</button>`;
-  else if(!IN_CLAUDE){const left=OURA.daysLeft();action=left!=null&&left<=3?`<button data-open="oura">Oura-Anmeldung läuft ab</button>`:OURA.token()?`<button data-act="sync">Aktualisieren</button>`:`<button data-open="oura">Neue Daten holen</button>`}
+  else if(!IN_CLAUDE){const left=OURA.daysLeft();action=moved?"":expired?`<button data-open="oura">Neu anmelden</button>`:left!=null&&left<=3?`<button data-open="oura">Oura-Anmeldung läuft ab</button>`:OURA.token()?`<button data-act="sync">Aktualisieren</button>`:`<button data-open="oura">Neue Daten holen</button>`}
   return `<div class="srcbar"><span class="pulse ${live&&!stale?"live":""}"></span>
-  <span>${live?"Live von Oura":"Datenstand"} · letzte Nacht ${fmtDate(lastDate)}${days===1?" · die letzte Nacht fehlt noch: Oura-App öffnen":days>=2?` · Ring seit ${days} Tagen nicht synchronisiert`:""}</span>${action}</div>`;
+  <span>${live?"Live von Oura":"Datenstand"} · letzte Nacht ${fmtDate(lastDate)}${moved?" · die Oura-Anmeldung ist jetzt in der App":expired&&days>=1?" · Oura-Anmeldung abgelaufen":days===1?" · die letzte Nacht fehlt noch: Oura-App öffnen":days>=2?` · Ring seit ${days} Tagen nicht synchronisiert`:""}</span>${action}</div>`;
 }
 function appbar(){
   return `<div class="appbar fu" style="animation-delay:.05s">
@@ -1259,8 +1262,9 @@ const OV={
   </div>`,
   code:()=>`${head("Code einfügen")}<div class="ovbody">
     ${IS_PWA&&isIOS()&&!isStandalone()?`<div class="set liquid-glass"><h3>${ic("info")}Erst installieren</h3><p>Auf dem iPhone hat die App vom Home-Bildschirm einen eigenen Speicher. Installiere Nachtwerk zuerst (Teilen → „Zum Home-Bildschirm“) und füge den Code dann dort ein.</p></div>`:""}
-    <div class="set liquid-glass"><h3>${ic("clipboard")}Code aus Claude</h3><ol><li>Öffne Nachtwerk in Claude (am Computer oder Handy).</li><li>Menü → „Aufs Handy übertragen“ → „Code kopieren“.</li><li>Hier lang tippen → Einfügen → Übernehmen.</li></ol>
-      <textarea class="glass-input" id="codeIn" rows="5" placeholder="NW1.…" style="margin-top:12px;font-size:12px" data-autofocus></textarea>
+    <div class="set liquid-glass"><h3>${ic("clipboard")}Code aus Claude oder Anmelde-Code</h3><ol><li>Öffne Nachtwerk in Claude (am Computer oder Handy).</li><li>Menü → „Aufs Handy übertragen“ → „Code kopieren“.</li><li>Hier lang tippen → Einfügen → Übernehmen.</li></ol>
+      <p class="tiny">Den Anmelde-Code aus Safari (beginnt mit NWT.) fügst du auch hier ein. Er gehört nur hierher, nie in einen Chat.</p>
+      <textarea class="glass-input" id="codeIn" rows="5" placeholder="NW1.… oder NWT.…" style="margin-top:12px;font-size:12px" data-autofocus></textarea>
       <div class="btnrow"><button class="cta solid" data-act="code-apply">Übernehmen</button></div></div>
   </div>`,
   oura:()=>ouraPanel(),
@@ -1345,47 +1349,108 @@ async function decodeData(code){
 }
 async function importCode(code,src="code"){
   const tm=String(code).trim().match(/NWT\.([A-Za-z0-9_-]+)/);
-  if(tm){const t=JSON.parse(new TextDecoder().decode(b64u.dec(tm[1])));if(!t.v||!t.exp||t.exp<Date.now())throw new Error("Der Anmelde-Code ist abgelaufen.");
-    const px=t.px?String(t.px).trim().replace(/\/+$/,""):"";
-    if(px&&px!==OURA.proxy()){if(!/^https:\/\/[a-z0-9.-]+\.workers\.dev$/i.test(px)||!confirm("Diese Brücken-Adresse übernehmen?\n"+px))throw new Error("Brücken-Adresse nicht übernommen.");store.set("nw_oura_proxy",px)}
-    store.set("nw_oura_tok",{v:String(t.v),exp:Number(t.exp)});if(t.cid)store.set("nw_oura_cid",String(t.cid).slice(0,80));
-    toast("Oura-Anmeldung übernommen");OURA.sync().catch(e=>{ouraError=e.message;toast(e.message)});return "token"}
+  if(tm){let t;try{t=JSON.parse(new TextDecoder().decode(b64u.dec(tm[1])))}catch(e){throw new Error("Der Anmelde-Code ist unvollständig. Kopier ihn noch einmal.")}
+    if(!t||!t.v||(!t.r&&(!t.exp||t.exp<Date.now())))throw new Error("Der Anmelde-Code ist abgelaufen.");
+    const px=t.px?normProxy(t.px):"",cid=t.cid?String(t.cid).replace(/\s+/g,"").slice(0,80):"";
+    if(t.px&&!px)throw new Error("Die Brücken-Adresse im Code ist ungültig.");
+    // Ein älterer Code würde die neuere Anmeldung ersetzen, und die nächste Erneuerung schlüge fehl
+    const cur=OURA.token();if(cur&&cur.iat&&Number(t.iat)<cur.iat)throw new Error("Dieser Anmelde-Code ist älter als deine jetzige Anmeldung. Du bist schon verbunden.");
+    if((px&&px!==OURA.proxy())||(cid&&cid!==OURA.clientId())){if(!confirm("Diese Oura-Verbindung übernehmen?\nBrücke: "+(px||OURA.proxy())+"\nClient ID: "+(cid||OURA.clientId())+"\n\nNur OK, wenn das deine eigene Brücke ist."))throw new Error("Brücken-Adresse nicht übernommen.");if(px)store.set("nw_oura_proxy",px)}
+    store.set("nw_oura_tok",{v:String(t.v),r:t.r?String(t.r):null,exp:Number(t.exp)||0,scope:String(t.scope||""),iat:Number(t.iat)||0});if(cid)store.set("nw_oura_cid",cid);
+    toast("Oura-Anmeldung übernommen");OURA.sync().catch(e=>{ouraError=e.message;toast(e.message);if(e.code==="auth")keepScroll(render)});return "token"}
   const d=await decodeData(code);
   DATA=mergeData(SOURCE.kind==="demo"?EMPTY:DATA,d);saveData(src);rebuild();
   toast(`${d.sleep.length} Schlafphasen übernommen`);
 }
 
 /* ===== Oura direkt (nur Web-App) =====
-   Anmeldung im Browser (OAuth ohne Geheimnis, Token im #-Teil der Rücksprung-Adresse, gilt etwa 30 Tage).
-   Oura erlaubt keine direkten Browser-Abrufe (CORS), darum laufen die Daten über eine kleine eigene Brücke
-   (Cloudflare Worker, siehe oura-proxy/). Ohne Brücke bleibt der Code aus Claude. */
+   Anmeldung mit Ouras Code-Verfahren (OAuth mit PKCE). Den Code tauscht deine eigene Brücke (Cloudflare
+   Worker, siehe oura-proxy/) gegen Schlüssel, denn nur sie kennt das Client Secret. Die Schlüssel bleiben
+   auf diesem Gerät und erneuern sich selbst. Auch die Daten laufen über die Brücke, weil Oura keine
+   direkten Browser-Abrufe erlaubt (CORS). Ohne Brücke bleibt der Code aus Claude.
+   Ouras älteres Verfahren ohne Secret liefert seit Herbst 2026 Schlüssel ohne Freigaben, darum nicht mehr. */
 const GUIDE_URL="https://github.com/ferdawsyousuf-stack/psychologie-lern-app/blob/HEAD/nachtwerk/oura-proxy/ANLEITUNG.md";
+const OURA_AUTH="https://moi.ouraring.com/oauth/v2/ext/oauth-authorize";
+const OURA_SCOPE="extapi:daily extapi:spo2";
+// Brücken-Adresse säubern: Leerzeichen weg, https:// ergänzen, nur der Rechnername zählt. null = ungültig
+const normProxy=v=>{v=String(v||"").replace(/\s+/g,"");if(!v)return "";if(!/^[a-z]+:\/\//i.test(v))v="https://"+v;try{const u=new URL(v);return /^https?:$/i.test(u.protocol)&&/\.workers\.dev$/i.test(u.hostname)?"https://"+u.hostname.toLowerCase():null}catch(e){return null}};
+const ouraErr=(msg,code)=>Object.assign(new Error(msg),{code});
 const OURA={
-  token:()=>{const t=store.get("nw_oura_tok",null);return t&&(!t.exp||t.exp>Date.now())?t:null},
-  clientId:()=>store.get("nw_oura_cid",""),
-  proxy:()=>String(store.get("nw_oura_proxy","")).trim().replace(/\/+$/,""),
-  daysLeft:()=>{const t=OURA.token();return t?Math.floor((t.exp-Date.now())/864e5):null},
-  authorize(){
-    const cid=OURA.clientId();if(!cid){toast("Bitte zuerst die Client-ID eintragen");return}
-    const r=new Uint8Array(16);crypto.getRandomValues(r);const state=b64u.enc(r);store.set("nw_oura_state",state);
-    // Ohne scope: Oura nimmt die Bereiche, die bei der App angehakt sind. Das ist am robustesten.
-    const u=new URL("https://cloud.ouraring.com/oauth/authorize");
-    u.searchParams.set("response_type","token");u.searchParams.set("client_id",cid);u.searchParams.set("redirect_uri",PWA_URL);u.searchParams.set("state",state);
+  // Verbunden, solange ein Zugang da ist, der noch gilt oder sich erneuern lässt
+  token:()=>{const t=store.get("nw_oura_tok",null);return t&&t.v&&(t.r||!t.exp||t.exp>Date.now())?t:null},
+  clientId:()=>String(store.get("nw_oura_cid","")).replace(/\s+/g,""),
+  proxy:()=>normProxy(store.get("nw_oura_proxy",""))||"",
+  // Nur Zugänge ohne Erneuerungs-Schlüssel laufen ab
+  daysLeft:()=>{const t=OURA.token();return t&&!t.r&&t.exp?Math.floor((t.exp-Date.now())/864e5):null},
+  async authorize(){
+    const cid=OURA.clientId(),px=OURA.proxy();
+    if(!cid){toast("Bitte zuerst die Client ID eintragen");return}
+    if(!px){toast("Bitte zuerst die Brücken-Adresse eintragen");return}
+    const rnd=n=>{const r=new Uint8Array(n);crypto.getRandomValues(r);return b64u.enc(r)};
+    const state=rnd(16),verifier=rnd(48);
+    const challenge=b64u.enc(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier))));
+    store.set("nw_oura_pkce",{state,verifier,t:Date.now()});
+    const u=new URL(OURA_AUTH);
+    // prompt=consent: Oura zeigt die Freigabe immer, damit keine alte, leere Freigabe wiederverwendet wird
+    Object.entries({response_type:"code",client_id:cid,redirect_uri:PWA_URL,scope:OURA_SCOPE,state,code_challenge:challenge,code_challenge_method:"S256",prompt:"consent"}).forEach(([k,v])=>u.searchParams.set(k,v));
     location.href=u.toString();
   },
+  async tokenCall(params){
+    const px=OURA.proxy();if(!px) throw ouraErr("Bitte die Brücken-Adresse eintragen.","auth");
+    let r;try{r=await fetch(px+"/oauth/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({...params,client_id:OURA.clientId()}),cache:"no-store"})}
+    catch(e){throw ouraErr("Die Brücke zu Oura ist nicht erreichbar. Stimmt die Adresse?","net")}
+    let j={};try{j=await r.json()}catch(e){}
+    if(!r.ok||!j.access_token){
+      const e=typeof j.error==="string"&&/^[a-z_]{1,40}$/.test(j.error)?j.error:"";
+      throw ouraErr(e==="no_secret"?"In der Brücke fehlt noch das Client Secret (Anleitung, Schritt 2).":e==="invalid_client"?"Oura kennt diese Client ID oder dieses Client Secret nicht. Prüf beides.":e==="invalid_grant"?"Die Anmeldung bei Oura gilt nicht mehr. Bitte neu anmelden.":r.status===404||r.status===405?"Die Brücke ist veraltet. Ersetz den Code im Worker durch den aus der Anleitung.":e==="oura_unreachable"||r.status>=502?"Oura ist gerade nicht erreichbar. Versuch es später noch mal.":"Die Anmeldung bei Oura hat nicht geklappt"+(e?" ("+e+")":"")+".",e==="invalid_grant"?"auth":"token");
+    }
+    // Erneuerungs-Schlüssel gelten nur einmal: den neuen sofort speichern
+    const t={v:String(j.access_token),r:j.refresh_token?String(j.refresh_token):(params.refresh_token||null),exp:Date.now()+Math.min(Number(j.expires_in)||86400,31*86400)*1000-60000,scope:String(j.scope||""),iat:Date.now()};
+    store.set("nw_oura_tok",t);store.del("nw_oura_moved");return t;
+  },
+  // stale = der Schlüssel, den Oura gerade abgelehnt hat
+  async access(stale){
+    const t=OURA.token();if(!t) throw ouraErr("Nicht mit Oura verbunden.","auth");
+    if(stale&&t.v!==stale) return t.v;
+    if(!stale&&(!t.exp||t.exp>Date.now()+5*60e3)) return t.v;
+    if(!t.r){if(!stale&&t.exp>Date.now())return t.v;store.del("nw_oura_tok");throw ouraErr("Die Anmeldung bei Oura ist abgelaufen. Bitte neu anmelden.","auth")}
+    // Nur eine Erneuerung gleichzeitig, sonst verbraucht ein zweiter Aufruf den Schlüssel umsonst
+    if(!OURA._ref){const r0=t.r;OURA._ref=OURA.tokenCall({grant_type:"refresh_token",refresh_token:r0}).catch(e=>{
+      // Hat ein anderes Fenster gleichzeitig erneuert, gilt dessen neuer Schlüssel
+      const c=store.get("nw_oura_tok",null);if(c&&c.r&&c.r!==r0)return c;
+      // Riss die Verbindung mitten in der Erneuerung ab, ist der alte Schlüssel bei Oura womöglich schon verbraucht
+      if(e.code==="net")store.set("nw_oura_cut",r0.slice(-8));
+      if(e.code==="auth"){store.del("nw_oura_tok");if(store.get("nw_oura_cut","")===r0.slice(-8))e.message="Die Verbindung brach bei der letzten Erneuerung ab. Bitte einmal neu anmelden.";store.del("nw_oura_cut")}
+      throw e}).finally(()=>{OURA._ref=null})}
+    return (await OURA._ref).v;
+  },
+  // Nur löschen, wenn noch genau dieser Schlüssel gespeichert ist
+  drop(v){const c=store.get("nw_oura_tok",null);if(c&&c.v===v)store.del("nw_oura_tok")},
+  // Beim Trennen auch bei Oura abmelden, damit ein kopierter Code nichts mehr öffnet. Fehler sind egal
+  revoke(t){const px=OURA.proxy();if(!px||!t)return;
+    [t.r,t.v].filter(Boolean).forEach(tok=>fetch(px+"/oauth/revoke",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({token:tok,token_type_hint:tok===t.r?"refresh_token":"access_token",client_id:OURA.clientId()}),cache:"no-store",keepalive:true}).catch(()=>{}))},
   async get(path,params){
-    const t=OURA.token();if(!t) throw Object.assign(new Error("Nicht mit Oura verbunden."),{code:"auth"});
-    // Ohne Brücke direkt versuchen; Oura blockt das bisher im Browser (CORS), dann braucht es die Brücke
-    const px=OURA.proxy(),base=/^https:\/\//.test(px)?px:"https://api.ouraring.com";
-    const mk=extra=>base+"/v2/usercollection/"+path+"?"+new URLSearchParams({...params,...extra});
-    let url=mk({}),all=[];
-    for(let guard=0;guard<10&&url;guard++){
-      let r;try{r=await fetch(url,{headers:{Authorization:"Bearer "+t.v},cache:"no-store"})}catch(e){throw Object.assign(new Error(px?"Die Brücke zu Oura ist nicht erreichbar. Stimmt die Adresse?":"Oura blockt den direkten Abruf aus dem Browser. Richte die Brücke ein (Anleitung im Oura-Fenster)."),{code:"net"})}
-      if(r.status===401){store.del("nw_oura_tok");throw Object.assign(new Error("Die Anmeldung bei Oura ist abgelaufen. Bitte neu verbinden."),{code:"auth"})}
-      if(r.status===403) throw Object.assign(new Error("Oura verweigert „"+path+"“. Ist der Bereich bei deiner Oura-App angehakt und die Mitgliedschaft aktiv?"),{code:"scope"});
-      if(r.status===429) throw Object.assign(new Error("Oura bremst gerade. Versuch es in ein paar Minuten noch mal."),{code:"rate"});
-      if(!r.ok) throw Object.assign(new Error("Oura hat mit Fehler "+r.status+" geantwortet."),{code:"http"});
-      const j=await r.json();all=all.concat(j.data||[]);
+    const px=OURA.proxy();if(!px) throw ouraErr("Bitte die Brücken-Adresse eintragen (Oura-Fenster).","auth");
+    const mk=extra=>px+"/v2/usercollection/"+path+"?"+new URLSearchParams({...params,...extra});
+    let url=mk({}),all=[],retried=false;
+    for(let guard=0;guard<12&&url;guard++){
+      const v=await OURA.access();
+      let r;try{r=await fetch(url,{headers:{Authorization:"Bearer "+v},cache:"no-store"})}catch(e){throw ouraErr("Die Brücke zu Oura ist nicht erreichbar. Stimmt die Adresse?","net")}
+      if(r.status===401){
+        const txt=await r.text().catch(()=>"");
+        // Fehlende Freigabe: ein neuer Schlüssel hilft nicht. Ohne SpO2 geht es trotzdem weiter
+        if(/scope/i.test(txt)){if(path==="daily_spo2")return all;OURA.drop(v);throw ouraErr("Oura hat die Freigabe für Schlafdaten nicht erteilt. Melde dich neu an und lass bei Oura „daily“ angehakt.","auth")}
+        // Einmal mit frischem Schlüssel versuchen, dann erst aufgeben
+        if(!retried&&OURA.token()?.r){retried=true;await OURA.access(v);continue}
+        OURA.drop(v);throw ouraErr("Die Anmeldung bei Oura ist abgelaufen. Bitte neu anmelden.","auth");
+      }
+      if(r.status===403){if(path==="daily_spo2")return all;throw ouraErr("Oura verweigert „"+path+"“. Ist der Bereich bei deinem Zugang auf developer.ouraring.com angehakt und deine Oura-Mitgliedschaft aktiv?","scope")}
+      if(r.status===404) throw ouraErr("Die Brücke ist veraltet. Ersetz den Code im Worker durch den aus der Anleitung.","http");
+      if(r.status===429) throw ouraErr("Oura bremst gerade. Versuch es in ein paar Minuten noch mal.","rate");
+      if(r.status>=502&&r.status<=504) throw ouraErr("Oura ist gerade nicht erreichbar. Versuch es später noch mal.","http");
+      if(!r.ok) throw ouraErr("Oura hat mit Fehler "+r.status+" geantwortet.","http");
+      let j;try{j=await r.json()}catch(e){throw ouraErr("Oura hat keine lesbare Antwort geschickt. Versuch es später noch mal.","http")}
+      all=all.concat(Array.isArray(j&&j.data)?j.data:[]);
       url=j.next_token?mk({next_token:j.next_token}):null;
     }
     return all;
@@ -1393,7 +1458,9 @@ const OURA={
   async sync(){
     // end_date gilt bei /sleep als „bis ausschließlich“, darum einen Tag weiter
     const p={start_date:addDays(localKey(),-60),end_date:addDays(localKey(),1)};
-    const [sl,ds,rd,ac,sp]=await Promise.all([OURA.get("sleep",p),OURA.get("daily_sleep",p).catch(()=>[]),OURA.get("daily_readiness",p).catch(()=>[]),OURA.get("daily_activity",p).catch(()=>[]),OURA.get("daily_spo2",p).catch(()=>[])]);
+    // SpO2 nur abfragen, wenn Oura die Freigabe dafür erteilt hat (oder nicht sagt, welche)
+    const tk=OURA.token(),spo2=!tk||!tk.scope||/spo2/.test(tk.scope);
+    const [sl,ds,rd,ac,sp]=await Promise.all([OURA.get("sleep",p),OURA.get("daily_sleep",p).catch(()=>[]),OURA.get("daily_readiness",p).catch(()=>[]),OURA.get("daily_activity",p).catch(()=>[]),spo2?OURA.get("daily_spo2",p).catch(()=>[]):Promise.resolve([])]);
     const score={};ds.forEach(x=>score[x.day]=x.score);
     const mn=s=>s==null?null:Math.round(s/60);
     const d={
@@ -1404,47 +1471,58 @@ const OURA={
     };
     // Nächte im abgerufenen Zeitraum ersetzen, damit geänderte oder gelöschte Nächte von Oura verschwinden
     const base=SOURCE.kind==="demo"?EMPTY:{...DATA,sleep:d.sleep.length?DATA.sleep.filter(r=>r[0]<p.start_date):DATA.sleep};
-    DATA=mergeData(base,d);saveData("oura");rebuild();
+    DATA=mergeData(base,d);saveData("oura");ouraError=null;rebuild();
     toast(`Oura: ${d.sleep.length} Schlafphasen geladen`);
   },
   handleRedirect(){
-    if(!location.hash.includes("access_token=")&&!location.hash.includes("error=")) return false;
-    const h=new URLSearchParams(location.hash.slice(1));
-    history.replaceState(null,"",location.pathname+location.search);
-    if(h.get("error")){toast("Oura-Anmeldung abgebrochen");return true}
-    const st=store.get("nw_oura_state",null);
-    if(!st||h.get("state")!==st){
-      // Ohne gestartete Anmeldung kein Token übernehmen. iPhone: Landet der Rücksprung in Safari, dort neu anmelden
-      const ios=isIOS()&&!isStandalone();
-      toast(ios&&!st?"Bitte die Anmeldung hier in Safari noch einmal starten.":"Anmeldung nicht bestätigt. Bitte noch mal verbinden.");
-      if(ios)setTimeout(()=>openOv("oura"),300);
-      return true}
-    const ttl=Math.min(Number(h.get("expires_in"))||2592000,31*86400);
-    store.set("nw_oura_tok",{v:h.get("access_token"),exp:Date.now()+ttl*1000-60000});store.del("nw_oura_state");
-    // iPhone: Landet der Rücksprung in Safari statt in der App, hilft der Anmelde-Code (siehe Oura-Fenster)
-    setTimeout(()=>{if(!isStandalone()&&isIOS())openOv("oura");OURA.sync().then(()=>{ouraError=null}).catch(e=>{toast(e.message);ouraError=e.message})},300);
+    // Oura springt mit ?code=…&state=… zurück, bei Abbruch mit ?error=… (manchmal auch im #-Teil)
+    const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));
+    const has=k=>q.has(k)||h.has(k),val=k=>q.get(k)??h.get(k);
+    if(!has("code")&&!has("error")&&!has("access_token")) return false;
+    history.replaceState(null,"",location.pathname);
+    const pk=store.get("nw_oura_pkce",null);store.del("nw_oura_pkce");store.del("nw_oura_state");
+    const ios=isIOS()&&!isStandalone();
+    const fail=msg=>{ouraError=msg;toast(msg);setTimeout(()=>openOv("oura"),300);return true};
+    if(has("error")){const raw=String(val("error")),e=/^[a-z_]{1,40}$/.test(raw)?raw:"unbekannt";
+      return fail(e==="access_denied"?"Oura-Anmeldung abgebrochen.":e==="invalid_scope"?"Hake bei deinem Zugang auf developer.ouraring.com „daily“ und „spo2“ an und melde dich neu an.":e==="invalid_client"||e==="unauthorized_client"?"Oura kennt diese Client ID nicht. Prüf sie im Oura-Fenster.":"Die Anmeldung bei Oura hat nicht geklappt ("+e+").")}
+    // Alte Rücksprünge mit Schlüssel im #-Teil werden nicht mehr übernommen
+    if(!has("code")) return fail("Bitte neu anmelden. Nachtwerk nutzt jetzt Ouras neues Anmeldeverfahren.");
+    if(!pk||val("state")!==pk.state||Date.now()-pk.t>30*60e3)
+      return fail(ios&&!pk?"Auf dem iPhone: Bitte die Anmeldung hier in Safari noch einmal starten.":"Anmeldung nicht bestätigt. Bitte noch mal anmelden.");
+    toast("Anmeldung bei Oura …");
+    OURA.tokenCall({grant_type:"authorization_code",code:val("code"),redirect_uri:PWA_URL,code_verifier:pk.verifier})
+      .then(t=>{
+        if(t.scope&&!/daily/.test(t.scope)){store.del("nw_oura_tok");throw ouraErr("Oura hat die Freigabe für Schlafdaten nicht erteilt. Melde dich neu an und hake bei Oura „daily“ an.","auth")}
+        ouraError=null;if(ios)openOv("oura");return OURA.sync();
+      })
+      .then(()=>{if(ovKind==="oura")openOv("oura")})
+      .catch(e=>fail(e.message));
     return true;
   },
-  // Anmelde-Code für den Umzug von Safari in die installierte App: Token, Brücke und Client-ID
-  tokenCode:()=>{const t=OURA.token();return t?"NWT."+b64u.enc(new TextEncoder().encode(JSON.stringify({...t,px:OURA.proxy(),cid:OURA.clientId()}))):""},
+  // Anmelde-Code für den Umzug von Safari in die installierte App: Schlüssel, Brücke und Client ID
+  tokenCode:()=>{const t=OURA.token();return t?"NWT."+b64u.enc(new TextEncoder().encode(JSON.stringify({v:t.v,r:t.r||null,exp:t.exp,scope:t.scope||"",iat:t.iat||0,px:OURA.proxy(),cid:OURA.clientId()}))):""},
 };
 let ouraError=null;
 function ouraPanel(){
-  const t=OURA.token(),left=OURA.daysLeft();
+  const t=OURA.token(),left=OURA.daysLeft(),iosApp=isIOS()&&isStandalone(),iosWeb=isIOS()&&!isStandalone();
+  const errBox=ouraError?`<br><span style="color:var(--bad)">${esc(ouraError)}</span>`:"";
   return `${head("Daten von Oura")}<div class="ovbody">
-    ${t?`<div class="set liquid-glass"><h3>${ic("check")}Mit Oura verbunden</h3><p>Anmeldung gültig bis ${new Date(t.exp).toLocaleDateString("de-DE")}${left!=null&&left<=3?" · bald neu anmelden":""}.${ouraError?`<br><span style="color:var(--bad)">${esc(ouraError)}</span>`:""}</p>
-      <div class="btnrow"><button class="cta solid" data-act="sync">${ic("refresh-cw")} Jetzt aktualisieren</button><button class="pillbtn liquid-glass" data-act="oura-login">Neu anmelden</button><button class="pillbtn liquid-glass" data-act="oura-out">Trennen</button></div>
-      ${!isStandalone()?`<p class="tiny">Auf dem iPhone landet die Anmeldung manchmal in Safari statt in der App. Dann hier kopieren und in der App unter „Code einfügen“ einsetzen.</p><div class="btnrow"><button class="pillbtn liquid-glass" data-copy="token">${ic("copy")} Anmelde-Code kopieren</button></div>`:""}</div>`:""}
+    ${t?`<div class="set liquid-glass"><h3>${ic("check")}Mit Oura verbunden</h3><p>${t.r?"Die Anmeldung erneuert sich selbst.":`Anmeldung gültig bis ${new Date(t.exp).toLocaleDateString("de-DE")}${left!=null&&left<=3?" · bald neu anmelden":""}.`}${errBox}</p>
+      ${iosWeb?`<p class="tiny">Noch ein Schritt: Tippe auf „Anmelde-Code kopieren“. Öffne dann die App vom Home-Bildschirm, Menü → „Code einfügen“, einfügen, „Übernehmen“. Safari ist danach abgemeldet, das ist richtig. Der Code beginnt mit NWT. und ist ein Schlüssel zu deinen Schlafdaten. Füge ihn nur in Nachtwerk ein, nie in einen Chat oder eine Mail.</p><div class="btnrow"><button class="cta solid" data-copy="token">${ic("copy")} Anmelde-Code kopieren</button></div><textarea class="glass-input" id="tokOut" rows="3" readonly hidden></textarea>`:""}
+      <div class="btnrow"><button class="${iosWeb?"pillbtn liquid-glass":"cta solid"}" data-act="sync">${ic("refresh-cw")} Jetzt aktualisieren</button>${iosApp?`<button class="pillbtn liquid-glass" data-copy="url">Adresse für Safari kopieren</button>`:`<button class="pillbtn liquid-glass" data-act="oura-login">Neu anmelden</button>`}<button class="pillbtn liquid-glass" data-act="oura-out">Trennen</button></div>
+      ${iosApp?`<p class="tiny">Neu anmelden geht auf dem iPhone nur in Safari: Adresse kopieren, in Safari öffnen, dort anmelden und den neuen Anmelde-Code hier einfügen.</p>`:""}</div>`
+      :ouraError?`<div class="set liquid-glass"><h3>${ic("info")}Das hat nicht geklappt</h3><p style="color:var(--bad)">${esc(ouraError)}</p></div>`:""}
     <div class="set liquid-glass"><h3>${ic("clipboard")}Am einfachsten: Code aus Claude</h3><p>Öffne Nachtwerk in Claude. Dort kommen deine Daten über die Oura-Verbindung. Tippe auf „Aufs Handy übertragen“ und füge den Code hier ein.</p><div class="btnrow"><button class="cta solid" data-open="code">Code einfügen</button></div></div>
     <div class="set liquid-glass"><h3>${ic("link")}Direkt mit Oura (einmalig einrichten)</h3>
-      <p>Oura lässt Browser-Apps nicht direkt an die Daten. Darum braucht es zwei kostenlose Bausteine, etwa 15 Minuten Arbeit. Danach lädt Nachtwerk deine Nächte selbst. <a href="${GUIDE_URL}" target="_blank" rel="noopener">Ausführliche Anleitung</a></p>
-      <ol><li>Auf <a href="https://developer.ouraring.com" target="_blank" rel="noopener">developer.ouraring.com</a> eine App anlegen: Name <code>Nachtwerk</code>, als Website, Datenschutz und Nutzungsbedingungen <code>${PWA_URL}</code>, als Redirect-URI genau <code>${PWA_URL}</code>. Nur „Daily“ und „SpO2“ angehakt lassen. Dann die <b>Client ID</b> kopieren.</li>
-      <li>Bei Cloudflare (kostenlos) einen Worker anlegen und den Code aus der Anleitung einfügen. Das ist die Brücke. Ihre Adresse endet auf <code>workers.dev</code>.</li>
-      <li>Beides hier eintragen und anmelden.</li></ol>
-      <label class="fl" for="cidIn">Client ID</label><input class="glass-input" id="cidIn" value="${esc(OURA.clientId())}" placeholder="aus developer.ouraring.com" autocomplete="off" spellcheck="false">
-      <label class="fl" for="proxyIn">Brücken-Adresse</label><input class="glass-input" id="proxyIn" value="${esc(OURA.proxy())}" placeholder="https://nachtwerk-oura.….workers.dev" autocomplete="off" spellcheck="false" inputmode="url">
-      <div class="btnrow"><button class="cta solid" data-act="oura-login">Bei Oura anmelden</button></div>
-      <p class="tiny">Die Anmeldung läuft direkt bei Oura, Nachtwerk sieht dein Passwort nie. Die Brücke reicht nur Anfragen weiter und speichert nichts. Alle 30 Tage einmal neu anmelden. Morgens zuerst die Oura-App öffnen, damit die Nacht in der Cloud ist.</p></div>
+      <p>Oura lässt Web-Apps nicht direkt an die Daten. Darum braucht es zwei kostenlose Bausteine, etwa 30 Minuten Arbeit am Laptop. Danach lädt Nachtwerk deine Nächte selbst. <a href="${GUIDE_URL}" target="_blank" rel="noopener">Ausführliche Anleitung</a></p>
+      <ol><li>Auf <a href="https://developer.ouraring.com/applications" target="_blank" rel="noopener">developer.ouraring.com</a> einen Zugang für Nachtwerk anlegen („Create New“). Bei Website, Privacy Policy, Terms of Service und Redirect URIs jeweils genau <code>${PWA_URL}</code>. Bei den Scopes nur „daily“ und „spo2“ anhaken, beide sind nötig. Dann unter „View Details“ <b>Client ID</b> und <b>Client Secret</b> ansehen.</li>
+      <li>Bei Cloudflare (kostenlos) die Brücke anlegen: einen Worker mit dem Code aus der Anleitung. Das Client Secret kommt unter „Settings“ → „Runtime variables and secrets“ → „+ Add variable“ hinein, mit Type „Secret“ und Name <code>OURA_CLIENT_SECRET</code>. Nirgends sonst. Die Adresse der Brücke endet auf <code>workers.dev</code>. Im Browser geöffnet zeigt sie „Client Secret: eingetragen.“</li>
+      <li>${iosApp?"Auf dem iPhone meldest du dich in Safari an: Adresse kopieren, in Safari öffnen, dort Client ID und Brücken-Adresse eintragen und anmelden. Dann den Anmelde-Code hier einfügen.":iosWeb?"Client ID und Brücken-Adresse hier einfügen und anmelden. Bei Oura beide Häkchen (daily und spo2) gesetzt lassen. Danach bringst du die Anmeldung mit dem Anmelde-Code in die App vom Home-Bildschirm.":"Client ID und Brücken-Adresse hier einfügen und anmelden. Bei Oura beide Häkchen (daily und spo2) gesetzt lassen."}</li></ol>
+      ${iosApp?`<div class="btnrow"><button class="cta solid" data-copy="url">${ic("copy")} Adresse für Safari kopieren</button><button class="pillbtn liquid-glass" data-open="code">Anmelde-Code einfügen</button></div>`
+      :`<label class="fl" for="cidIn">Client ID</label><input class="glass-input" id="cidIn" value="${esc(OURA.clientId())}" placeholder="„Client ID“ von Oura, nicht das Secret" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <label class="fl" for="proxyIn">Brücken-Adresse</label><input class="glass-input" id="proxyIn" value="${esc(OURA.proxy()||store.get("nw_oura_proxy",""))}" placeholder="https://nachtwerk-oura.….workers.dev" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="url">
+      <div class="btnrow"><button class="cta solid" data-act="oura-login">Bei Oura anmelden</button></div>`}
+      <p class="tiny">Die Anmeldung läuft direkt bei Oura. Nachtwerk sieht deine Oura-Zugangsdaten nie. Das Client Secret gibst du nur bei Cloudflare ein, nie hier und nie in einen Chat. Die Brücke reicht nur Anfragen weiter und speichert nichts. Morgens zuerst die Oura-App öffnen, damit die Nacht in der Cloud ist.</p></div>
   </div>`;
 }
 
@@ -1593,17 +1671,24 @@ document.addEventListener("click",async e=>{
   }
   if(d.copy){
     const txt=d.copy==="url"?PWA_URL:d.copy==="token"?OURA.tokenCode():(OVINIT.handy.code||await encodeData(DATA));
-    try{await navigator.clipboard.writeText(txt);toast(d.copy==="url"?"Adresse kopiert":"Code kopiert")}
-    catch(x){const ta=$("#codeOut");if(ta){ta.value=txt;ta.select();toast("Markiert. Jetzt kopieren")}}
+    try{await navigator.clipboard.writeText(txt);
+      // Erneuerungs-Schlüssel gelten nur einmal: Nach dem Umzug in die App meldet sich Safari ab
+      if(d.copy==="token"){store.del("nw_oura_tok");store.set("nw_oura_moved",1);keepScroll(render);toast("Code kopiert. Jetzt in der App einfügen.");openOv("oura")}else toast(d.copy==="url"?"Adresse kopiert":"Code kopiert")}
+    catch(x){const ta=$(d.copy==="token"?"#tokOut":"#codeOut");if(ta){ta.hidden=false;ta.value=txt;ta.select();
+      // Safari meldet sich auch hier ab, sonst teilen sich Safari und die App einen Schlüssel, der nur einmal gilt
+      if(d.copy==="token"){store.del("nw_oura_tok");store.set("nw_oura_moved",1);keepScroll(render)}
+      toast(d.copy==="token"?"Markiert. Kopieren und in der App einfügen":"Markiert. Jetzt kopieren")}}
     return;
   }
   const a=d.act;
   if(a==="close"){closeOv();return}
   if(a==="live"){loadLiveOnce();return}
-  if(a==="sync"){if(!OURA.token()){openOv("oura");return}toast("Lade von Oura …");try{await OURA.sync();ouraError=null}catch(x){ouraError=x.message;toast(x.message);if(x.code==="auth")openOv("oura")}return}
-  if(a==="oura-login"){const c=$("#cidIn"),px=$("#proxyIn");if(c)store.set("nw_oura_cid",c.value.trim());if(px)store.set("nw_oura_proxy",px.value.trim());
-    if(OURA.proxy()&&!/^https:\/\/\S+$/.test(OURA.proxy())){toast("Die Brücken-Adresse beginnt mit https://");return}OURA.authorize();return}
-  if(a==="oura-out"){store.del("nw_oura_tok");openOv("oura");return}
+  if(a==="sync"){if(!OURA.token()){openOv("oura");return}toast("Lade von Oura …");try{await OURA.sync();ouraError=null}catch(x){ouraError=x.message;toast(x.message);if(x.code==="auth"){keepScroll(render);openOv("oura")}else if(ovKind==="oura")openOv("oura")}return}
+  if(a==="oura-login"){const c=$("#cidIn"),pi=$("#proxyIn");
+    if(pi){const n=normProxy(pi.value);if(n===null){toast("Die Brücken-Adresse sieht so aus: https://name.konto.workers.dev");return}store.set("nw_oura_proxy",n)}
+    if(c)store.set("nw_oura_cid",c.value.replace(/\s+/g,""));
+    OURA.authorize().catch(x=>toast(x.message));return}
+  if(a==="oura-out"){const t=store.get("nw_oura_tok",null);store.del("nw_oura_tok");ouraError=null;OURA.revoke(t);openOv("oura");keepScroll(render);toast("Von Oura getrennt");return}
   if(a==="demo"){DATA=demoData();saveData("demo");rebuild();toast("Beispieldaten geladen");return}
   if(a==="code-apply"){const v=($("#codeIn")||{}).value||"";try{await importCode(v);closeOv()}catch(x){toast(x.message)}return}
   if(a==="export"){const blob=new Blob([JSON.stringify({v:1,d:DATA,diary:diary()},null,1)],{type:"application/json"});
@@ -1666,14 +1751,16 @@ function tick(){
     redirected=OURA.handleRedirect();
     const h=location.hash;
     if(h.startsWith("#import=")){history.replaceState(null,"",location.pathname+location.search);
-      if(confirm("Daten aus diesem Link in Nachtwerk übernehmen? Bestätige nur, wenn du den Link selbst in Nachtwerk erstellt hast.")){
+      // Anmelde-Codes kommen nur über die Zwischenablage. Ein Link damit stammt nicht von Nachtwerk
+      if(/NWT\./.test(h))setTimeout(()=>toast("Anmelde-Codes nur über „Code einfügen“, nie über einen Link."),400);
+      else if(confirm("Daten aus diesem Link in Nachtwerk übernehmen? Bestätige nur, wenn du den Link selbst in Nachtwerk erstellt hast.")){
         try{tokImported=(await importCode(h.slice(8)))==="token";if(isIOS()&&!isStandalone())setTimeout(()=>toast("Safari und die installierte App speichern getrennt. Füge den Code in der App ein."),2600)}catch(e){toast(e.message)}}}
   }
   M=build(DATA);
   applyDst();
   render();
   if(IN_CLAUDE) connectLive();
-  else if(!redirected&&!tokImported&&OURA.token()&&(!SOURCE.at||Date.now()-SOURCE.at>3*3600e3)) OURA.sync().catch(e=>{ouraError=e.message});
+  else if(!redirected&&!tokImported&&OURA.token()&&(!SOURCE.at||Date.now()-SOURCE.at>3*3600e3)) OURA.sync().catch(e=>{ouraError=e.message;if(e.code==="auth")keepScroll(render)});
   setInterval(tick,5*60*1000);
   document.addEventListener("visibilitychange",()=>{if(document.hidden)return;tick();if(ovKind==="wach")OVINIT.wach.check?.()});
 })();

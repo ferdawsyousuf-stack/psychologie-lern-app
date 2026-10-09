@@ -37,8 +37,9 @@ beim Sprechen automatisch auf. Der Fortschritt bleibt auf dem Handy.
 Schlafdaten. Die kommen auf dem Handy dazu und bleiben dort im Browser-Speicher:
 
 - **Code aus Claude:** Im Nachtwerk-Artifact auf „Aufs Handy übertragen“ tippen, Code kopieren, in der App einfügen.
-- **Direkt von Oura:** einmalig eine Oura-App und eine kleine Brücke (Cloudflare Worker) anlegen, siehe
-  [`nachtwerk/oura-proxy/ANLEITUNG.md`](nachtwerk/oura-proxy/ANLEITUNG.md). Oura erlaubt keine Abrufe direkt aus dem Browser.
+- **Direkt von Oura:** einmalig einen Zugang bei Oura und eine kleine Brücke (Cloudflare Worker) anlegen, siehe
+  [`nachtwerk/oura-proxy/ANLEITUNG.md`](nachtwerk/oura-proxy/ANLEITUNG.md). Oura erlaubt keine Abrufe direkt aus dem Browser,
+  und die Anmeldung braucht das Client Secret. Das liegt nur verschlüsselt in der Brücke, nie in der App.
 
 `nachtwerk/index.html`, `sw.js` und `manifest.webmanifest` sind gebaut. Quelle ist `nachtwerk/quellcode/app.html`;
 `python3 build.py` dort baut die Web-App neu. Die Artifact-Fassung entsteht mit `--artifact` und einem Datenstand,
