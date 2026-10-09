@@ -1,5 +1,9 @@
 # Nachtwerk direkt mit Oura verbinden
 
+**Das brauchst du meist nicht.** Viel einfacher: In Nachtwerk Menü → „Daten von Oura“ → „Einrichten“, den Code an
+Claude schicken. Dann kommen deine Nächte jeden Vormittag von selbst. Diese Anleitung ist der fortgeschrittene Weg
+mit eigener Brücke.
+
 Das ist freiwillig. Ohne diese Einrichtung bringst du deine Daten wie bisher per Code aus Claude in die App.
 Mit ihr holt Nachtwerk deine Nächte selbst bei Oura ab. Die Einrichtung dauert einmal etwa 30 Minuten.
 Danach erneuert sich die Anmeldung von selbst. Will Oura doch einmal eine neue Anmeldung, sagt Nachtwerk dir Bescheid.
