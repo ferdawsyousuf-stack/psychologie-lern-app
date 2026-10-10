@@ -1,7 +1,7 @@
 # Nachtwerk direkt mit Oura verbinden
 
 **Das brauchst du meist nicht.** Viel einfacher: In Nachtwerk Menü → „Daten von Oura“ → „Einrichten“, den Code an
-Claude schicken. Dann sieht Claude jede Stunde nach und bringt neue Nächte von selbst. Diese Anleitung ist der fortgeschrittene Weg
+Claude schicken. Dann sieht Claude tagsüber jede Stunde nach und bringt neue Nächte von selbst. Diese Anleitung ist der fortgeschrittene Weg
 mit eigener Brücke.
 
 Das ist freiwillig. Ohne diese Einrichtung bringst du deine Daten wie bisher per Code aus Claude in die App.

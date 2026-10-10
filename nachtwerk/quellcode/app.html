@@ -1497,9 +1497,9 @@ const OURA={
   // Anmelde-Code für den Umzug von Safari in die installierte App: Schlüssel, Brücke und Client ID
   tokenCode:()=>{const t=OURA.token();return t?"NWT."+b64u.enc(new TextEncoder().encode(JSON.stringify({v:t.v,r:t.r||null,exp:t.exp,scope:t.scope||"",iat:t.iat||0,px:OURA.proxy(),cid:OURA.clientId()}))):""},
 };
-/* ===== Postfach: Claude bringt die Nächte jeden Morgen =====
+/* ===== Postfach: Claude bringt die Nächte tagsüber stündlich =====
    Dieses Handy erzeugt ein Schlüsselpaar. Den öffentlichen Teil (Code NWK.…) bekommt Claude einmal.
-   Claude holt vormittags die Nächte über die Oura-Verbindung in Claude, verschließt sie damit
+   Claude sieht von 6:57 bis 23:57 jede Stunde über die Oura-Verbindung in Claude nach, verschließt neue Nächte damit
    (quellcode/post.mjs) und legt sie als post/<id>.json neben die App. Öffnen kann sie nur der private
    Schlüssel, und der verlässt dieses Gerät nie. */
 const BOX_INFO="nachtwerk-post-1";
@@ -1585,14 +1585,25 @@ const BOX={
   async off(){const k=BOX.key();if(k)await KDB.del(k.id);["nw_box","nw_box_seen","nw_box_last","nw_box_at"].forEach(x=>store.del(x));boxError=null},
 };
 let boxError=null;
-// Wann kommt die fehlende Nacht? Claude sieht von 6:57 bis 23:57 jede Stunde nach
-const boxNext=()=>{const h=new Date().getHours();return h>=6&&h<23?"Öffne die Oura-App, dann kommt sie innerhalb einer Stunde":"Sie kommt morgen ab 7 Uhr. Öffne vorher die Oura-App"};
-function boxRefresh(){const el=document.getElementById("boxSet");if(el&&ovKind==="oura")el.outerHTML=boxBlock()}
-function boxBlock(){
+// Wann kommt die fehlende Nacht? Claude sieht von 6:57 bis 23:57 Berliner Zeit jede Stunde nach
+function berlinMin(){
+  try{const p=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",hour:"numeric",minute:"numeric",hourCycle:"h23"}).formatToParts(new Date()),g=t=>+((p.find(x=>x.type===t)||{}).value||0);return g("hour")*60+g("minute")}
+  catch(e){const d=new Date();return d.getHours()*60+d.getMinutes()}
+}
+const boxNext=()=>{const m=berlinMin();return m<360?"Sie kommt ab 7 Uhr. Öffne vorher die Oura-App":m<23*60+57?"Öffne die Oura-App, dann kommt sie meist innerhalb einer Stunde":"Sie kommt morgen ab 7 Uhr. Öffne vorher die Oura-App"};
+// Nur neu zeichnen, wenn sich etwas geändert hat. Ein aufgeklappter Postfach-Code bleibt offen
+function boxRefresh(){
+  const el=document.getElementById("boxSet");if(!el||ovKind!=="oura")return;
+  const m=boxMarkup();if(m===boxBlock.last)return;
+  const open=!!el.querySelector("details[open]");el.outerHTML=boxBlock.last=m;
+  const d=open&&document.querySelector("#boxSet details");if(d)d.open=true;
+}
+function boxBlock(){return boxBlock.last=boxMarkup()}
+function boxMarkup(){
   if(IN_CLAUDE)return "";
   const k=BOX.key(),last=store.get("nw_box_last",null),safari=IS_PWA&&isIOS()&&!isStandalone();
   const when=t=>new Date(t).toLocaleString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
-  const intro=`<p>Claude sieht jede Stunde über deine Oura-Verbindung in Claude nach und bringt neue Nächte hierher. Unterwegs sind sie verschlüsselt. Öffnen kann sie nur dieses Handy.</p>`;
+  const intro=`<p>Claude sieht tagsüber jede Stunde bei Oura nach und bringt neue Nächte hierher. Unterwegs sind sie verschlüsselt. Öffnen kann sie nur dieses Handy.</p>`;
   if(!k&&safari)return `<div class="set liquid-glass" id="boxSet"><h3>${ic("cloud-moon")}Am einfachsten: automatisch von Oura</h3>${intro}
     <p>Richte das in der App vom Home-Bildschirm ein. Safari und die App haben getrennte Speicher, und nur die App behält den Schlüssel sicher.</p>
     <ol><li>Unten auf ${ic("share")} Teilen tippen.</li><li>„Zum Home-Bildschirm“ wählen.</li><li>Nachtwerk vom Home-Bildschirm öffnen, Menü → „Daten von Oura“ → „Einrichten“.</li></ol>
@@ -1602,7 +1613,7 @@ function boxBlock(){
     <div class="btnrow"><button class="cta solid" data-act="box-setup">Einrichten</button></div></div>`;
   const codeBox=`<textarea class="glass-input" id="boxOut" rows="3" readonly style="margin-top:10px;font-size:11px">${BOX.code()}</textarea>`;
   const err=boxError?`<p style="color:var(--bad)">${esc(boxError)}</p>`:"";
-  const foot=`<p class="tiny">Der Code ist nur zum Verschließen. Den Schlüssel zum Öffnen behält dieses Handy. Öffne morgens die Oura-App. Sobald die Nacht dort ist, kommt sie innerhalb einer Stunde hierher.${safari?" Die App vom Home-Bildschirm hat einen eigenen Speicher und braucht ihr eigenes Postfach.":""} Postfach ${BOX.id8()} · <button class="linkbtn" data-act="box-off">Ausschalten</button></p>`;
+  const foot=`<p class="tiny">Der Code ist nur zum Verschließen. Den Schlüssel zum Öffnen behält dieses Handy. Öffne morgens die Oura-App. Sobald die Nacht dort ist, kommt sie meist innerhalb einer Stunde hierher.${safari?" Die App vom Home-Bildschirm hat einen eigenen Speicher und braucht ihr eigenes Postfach.":""} Postfach ${BOX.id8()} · <button class="linkbtn" data-act="box-off">Ausschalten</button></p>`;
   if(!last)return `<div class="set liquid-glass" id="boxSet"><h3>${ic("cloud-moon")}Automatisch von Oura</h3>
     <p>Eingerichtet. Schick Claude diesen Postfach-Code in eurem Chat. Die erste Lieferung kommt, sobald Claude ihn hat.</p>${err}${codeBox}
     <div class="btnrow"><button class="cta solid" data-copy="box">${ic("copy")} Postfach-Code kopieren</button><button class="pillbtn liquid-glass" data-act="box-check">${ic("refresh-cw")} Jetzt nachsehen</button></div>${foot}</div>`;
