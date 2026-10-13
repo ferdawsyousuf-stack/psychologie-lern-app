@@ -2,7 +2,7 @@
 // Die App startet sofort aus dem Speicher (auch ohne Internet) und holt Neuerungen im Hintergrund;
 // sie gelten ab dem nächsten Start. Oura-Abrufe gehen immer direkt ins Netz.
 
-const VERSION = '4997a8b8adfc';
+const VERSION = '54fed1e5a5b8';
 const SHELL = 'nachtwerk-shell-' + VERSION;
 const RUNTIME = 'nachtwerk-runtime-v1';
 const SHELL_FILES = [
